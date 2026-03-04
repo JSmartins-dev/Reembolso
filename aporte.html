@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitação de Aporte - Portal Maestro</title>
+    <style>
+        :root {
+            --primary: #004080;
+            --secondary: #0066cc;
+            --light: #f4f6f9;
+        }
+
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--light); margin: 0; padding: 0; }
+        
+        header { 
+            background: var(--primary); 
+            color: #fff; 
+            padding: 15px 30px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+        }
+
+        header a { color: white; text-decoration: none; font-weight: bold; font-size: 1.2rem; }
+
+        main { max-width: 600px; margin: 30px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+        h2 { color: var(--primary); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+
+        label { display: block; margin-top: 15px; font-weight: bold; color: #333; font-size: 14px; }
+
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            margin-top: 5px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            box-sizing: border-box; 
+            font-size: 16px;
+        }
+
+        .actions { margin-top: 25px; display: flex; gap: 10px; }
+
+        .btn { flex: 1; padding: 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 16px; }
+        .btn-save { background: var(--secondary); color: white; }
+        .btn-back { background: #eee; color: #333; }
+        .btn:hover { opacity: 0.8; }
+
+        .info-text { font-size: 12px; color: #666; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="financeiro.html">MAESTRO</a>
+        <span style="font-size: 14px;">Solicitação de Aporte</span>
+    </header>
+
+    <main>
+        <h2>Novo Aporte</h2>
+        <p class="info-text">Preencha os dados abaixo para solicitar a entrada de valores no caixa.</p>
+
+        <form id="formAporte" onsubmit="prepararSalvamento(event)">
+            <label>Solicitante *</label>
+            <input type="text" name="nome" placeholder="Seu nome completo" required>
+
+            <label>Estabelecimento / Unidade *</label>
+            <input type="text" name="estabelecimento" placeholder="Ex: Unidade Kohi / Maestro" required>
+
+            <label>Valor do Aporte (R$) *</label>
+            <input type="text" id="valorInput" name="valor" placeholder="0,00" required>
+
+            <label>Comprovante (Opcional)</label>
+            <input type="file" name="anexo" accept="image/*,.pdf">
+
+            <div class="actions">
+                <button type="button" class="btn btn-back" onclick="window.location.href='financeiro.html'">Voltar</button>
+                <button type="submit" class="btn btn-save">Solicitar Aporte</button>
+            </div>
+        </form>
+    </main>
+
+    <script>
+        // Máscara de Moeda (Igual à do Reembolso para manter o padrão)
+        const valorInput = document.getElementById('valorInput');
+        valorInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, "");
+            value = (value / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            e.target.value = value;
+        });
+
+        function prepararSalvamento(event) {
+            event.preventDefault();
+            const form = event.target;
+            const arquivo = form.anexo.files[0];
+
+            if (arquivo) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    finalizarSalvamento(form, e.target.result);
+                };
+                reader.readAsDataURL(arquivo);
+            } else {
+                finalizarSalvamento(form, "");
+            }
+        }
+
+        function finalizarSalvamento(form, anexoBase64) {
+            try {
+                // Criamos o objeto exatamente como o Painel Admin espera ler
+                const novaSolicitacao = {
+                    id: Date.now(),
+                    tipo: "Aporte",
+                    solicitante: form.nome.value.trim(),
+                    estabelecimento: form.estabelecimento.value.trim(),
+                    valor: form.valor.value, // Já formatado pela máscara
+                    data: new Date().toLocaleDateString('pt-BR'),
+                    status: "Pendente", // Status inicial padrão
+                    anexo: anexoBase64
+                };
+
+                // Busca solicitações existentes ou cria array vazio
+                const solicitacoes = JSON.parse(localStorage.getItem("solicitacoes")) || [];
+                solicitacoes.push(novaSolicitacao);
+
+                // Salva no LocalStorage
+                localStorage.setItem("solicitacoes", JSON.stringify(solicitacoes));
+
+                alert("Solicitação de aporte enviada com sucesso!");
+                window.location.href = "minhas-solicitacoes.html";
+
+            } catch (error) {
+                console.error("Erro ao salvar:", error);
+                alert("Erro ao salvar. Verifique se o arquivo não é pesado demais.");
+            }
+        }
+    </script>
+</body>
+</html>

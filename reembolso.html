@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitação de Reembolso - Portal Maestro</title>
+    <style>
+        :root {
+            --primary: #004080;
+            --secondary: #0066cc;
+            --light: #f4f6f9;
+        }
+
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--light); margin: 0; padding: 0; }
+        
+        header { 
+            background: var(--primary); 
+            color: #fff; 
+            padding: 15px 30px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+        }
+
+        header a { color: white; text-decoration: none; font-weight: bold; font-size: 1.2rem; }
+
+        main { max-width: 600px; margin: 30px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+        h2 { color: var(--primary); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+
+        label { display: block; margin-top: 15px; font-weight: bold; color: #333; font-size: 14px; }
+
+        input, select, textarea { 
+            width: 100%; 
+            padding: 10px; 
+            margin-top: 5px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            box-sizing: border-box; 
+            font-size: 16px;
+        }
+
+        textarea { height: 80px; resize: vertical; }
+
+        .actions { margin-top: 25px; display: flex; gap: 10px; }
+
+        .btn { flex: 1; padding: 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 16px; }
+        .btn-save { background: var(--secondary); color: white; }
+        .btn-back { background: #eee; color: #333; }
+        .btn:hover { opacity: 0.8; }
+
+        .info-text { font-size: 12px; color: #666; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="financeiro.html">MAESTRO</a>
+        <span style="font-size: 14px;">Solicitação de Reembolso</span>
+    </header>
+
+    <main>
+        <h2>Novo Reembolso</h2>
+        <p class="info-text">Preencha os dados e anexe o comprovante (campos com * são obrigatórios).</p>
+
+        <form onsubmit="salvarSolicitacao(event, 'Reembolso', this)">
+            <label>Nome do colaborador *</label>
+            <input type="text" name="nome" placeholder="Ex.: Jeniffer Martins" required>
+
+            <label>Empresa *</label>
+            <select name="empresa" required>
+                <option value="">Selecione a unidade</option>
+                <option value="Kohi">Kohi</option>
+                <option value="Rochinha RSCI">Rochinha RSCI</option>
+                <option value="Maestro">Maestro</option>
+                <option value="Oitta">Oitta</option>
+                <option value="Haitatsu">Haitatsu</option>
+                <option value="Kasato Maru">Kasato Maru</option>
+            </select>
+
+            <label>Data da Despesa</label>
+            <input type="date" name="data">
+
+            <label>Valor (R$) *</label>
+            <input type="text" name="valor" id="valorInput" placeholder="0.000,00" required>
+
+            <label>Justificativa/Descrição *</label>
+            <textarea name="descricao" placeholder="Descreva brevemente o motivo da despesa..." required></textarea>
+
+            <label>Dados Bancários (ou PIX) *</label>
+            <input type="text" name="banco" placeholder="Banco, Agência, Conta ou Chave PIX" required>
+
+            <label>Anexo (Comprovante / NF)</label>
+            <input type="file" name="anexo" accept="image/*,.pdf">
+
+            <div class="actions">
+                <button type="button" class="btn btn-back" onclick="window.location.href='financeiro.html'">Cancelar</button>
+                <button type="submit" class="btn btn-save">Enviar Solicitação</button>
+            </div>
+        </form>
+    </main>
+
+    <script>
+        // Máscara simples para o valor (opcional, melhora a experiência)
+        const valorInput = document.getElementById('valorInput');
+        valorInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, "");
+            value = (value / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            e.target.value = value;
+        });
+
+        function salvarSolicitacao(event, tipo, form) {
+            event.preventDefault();
+
+            const arquivo = form.anexo.files[0];
+
+            function registrarSolicitacao(anexoBase64) {
+                try {
+                    const solicitacao = {
+                        id: Date.now(),
+                        tipo: tipo,
+                        solicitante: form.nome.value,
+                        empresa: form.empresa.value,
+                        valor: form.valor.value,
+                        descricao: form.descricao.value,
+                        banco: form.banco.value,
+                        // Formata a data se existir, senão pega a data atual
+                        data: form.data.value ? new Date(form.data.value).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
+                        status: "Pendente",
+                        anexo: anexoBase64 || ""
+                    };
+
+                    let lista = JSON.parse(localStorage.getItem("solicitacoes")) || [];
+                    lista.push(solicitacao);
+                    
+                    localStorage.setItem("solicitacoes", JSON.stringify(lista));
+
+                    alert("Solicitação registrada com sucesso!");
+                    window.location.href = "minhas-solicitacoes.html";
+
+                } catch (e) {
+                    console.error(e);
+                    alert("Erro ao salvar! Se anexou uma imagem, tente uma menor.");
+                }
+            }
+
+            if (arquivo) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    registrarSolicitacao(e.target.result);
+                };
+                reader.onerror = function() {
+                    alert("Erro ao ler o arquivo selecionado.");
+                };
+                reader.readAsDataURL(arquivo);
+            } else {
+                registrarSolicitacao("");
+            }
+        }
+    </script>
+</body>
+</html>

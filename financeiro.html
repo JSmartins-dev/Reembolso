@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Portal Maestro - Financeiro</title>
+  <link rel="stylesheet" href="azure.css">
+</head>
+<body>
+  <!-- Cabeçalho com Menu -->
+  <header>
+    <a href="index.html" class="logo">MAESTRO</a>
+    <button class="menu-btn" onclick="abrirMenu()">Menu ▾</button>
+    <div id="menuDropdown" class="menu-dropdown">
+      <ul>
+        <li><a href="minhas-solicitacoes.html">Minhas Solicitações</a></li>
+        <li><a href="#" onclick="logout()">Sair</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <main style="padding:20px;">
+    <h2>Portal Maestro - Financeiro</h2>
+
+    <div class="portal">
+      <!-- Bloco Reembolso -->
+      <section>
+        <h3>Solicitar Reembolso</h3>
+        <p>Registre despesas pagas com recursos próprios e anexe o comprovante.</p>
+        <div class="actions">
+          <button onclick="window.location.href='reembolso.html'">Abrir Reembolso</button>
+          <button onclick="window.location.href='minhas-solicitacoes.html'">Minhas solicitações</button>
+        </div>
+      </section>
+
+      <!-- Bloco Material -->
+      <section>
+        <h3>Solicitar Material</h3>
+        <p>Solicite materiais de escritório para uso interno.</p>
+        <div class="actions">
+          <button onclick="window.location.href='material.html'">Abrir solicitação</button>
+          <button onclick="window.location.href='minhas-solicitacoes.html'">Minhas solicitações</button>
+        </div>
+      </section>
+
+      <!-- Bloco Uniforme -->
+      <section>
+        <h3>Solicitar Uniforme</h3>
+        <p>Informe tamanho e quantidade para o uniforme.</p>
+        <div class="actions">
+          <button onclick="window.location.href='uniforme.html'">Abrir solicitação</button>
+          <button onclick="window.location.href='minhas-solicitacoes.html'">Minhas solicitações</button>
+        </div>
+      </section>
+
+      <!-- Bloco Aporte (inicialmente oculto) -->
+      <section id="blocoAporte" style="display:none;">
+        <h3>Solicitar Aporte</h3>
+        <p>Solicite aporte financeiro para projetos internos.</p>
+        <div class="actions">
+          <button onclick="window.location.href='aporte.html'">Abrir solicitação</button>
+          <button onclick="window.location.href='minhas-solicitacoes.html'">Minhas solicitações</button>
+        </div>
+      </section>
+
+      <!-- Bloco Admin (inicialmente oculto) -->
+      <section id="blocoAdmin" style="display:none;">
+        <h3>Painel Admin</h3>
+        <p>Acesse o painel administrativo para visualizar saldos, aportes e solicitações.</p>
+        <div class="actions">
+          <button onclick="window.location.href='painel-admin.html'">Abrir Painel Admin</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script>
+    window.onload = function() {
+      const usuario = localStorage.getItem("usuarioLogado");
+      const blocoAporte = document.getElementById("blocoAporte");
+      const blocoAdmin = document.getElementById("blocoAdmin");
+
+      // Mostra na tela quem está logado (para testes)
+      console.log("Usuário logado:", usuario);
+
+      if (blocoAporte) {
+        // Apenas Vinicius e Admin podem ver o bloco de Aporte
+        blocoAporte.style.display = (usuario === "vinicius" || usuario === "admin") 
+          ? "block" 
+          : "none";
+      }
+
+      if (blocoAdmin) {
+        // Apenas Admin pode ver o bloco Admin
+        blocoAdmin.style.display = (usuario === "admin") 
+          ? "block" 
+          : "none";
+      }
+    };
+
+    function abrirMenu() {
+      const menu = document.getElementById("menuDropdown");
+      menu.style.display = (menu.style.display === "none" || menu.style.display === "") ? "block" : "none";
+    }
+
+    function logout() {
+      localStorage.removeItem("usuarioLogado");
+      window.location.href = "index.html"; // volta para login
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin - Financeiro</title>
+    <style>
+        :root {
+            --primary: #004080;
+            --secondary: #0066cc;
+            --success: #28a745;
+            --danger: #dc3545;
+            --light: #f4f6f9;
+        }
+
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--light); margin: 0; padding: 0; }
+        
+        header { 
+            background: var(--primary); 
+            color: #fff; 
+            padding: 15px 30px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .container { padding: 20px; max-width: 1200px; margin: auto; }
+        
+        h2 { color: var(--primary); border-left: 5px solid var(--secondary); padding-left: 10px; margin-top: 30px; }
+
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center; }
+        .card h3 { margin: 0 0 10px 0; font-size: 13px; color: #666; text-transform: uppercase; }
+        .card p { font-size: 22px; font-weight: bold; margin: 0; color: var(--secondary); }
+
+        .config-caixa { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        
+        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        table th { background: var(--primary); color: #fff; font-weight: 500; }
+        
+        .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; font-size: 14px; }
+        .btn-approve { background: var(--success); color: white; margin-right: 5px; }
+        .btn-reject { background: var(--danger); color: white; }
+        .btn-primary { background: var(--secondary); color: white; }
+        .btn-logout { background: transparent; border: 1px solid white; color: white; }
+        .btn:hover { opacity: 0.8; }
+        
+        .status-pendente { color: #f39c12; font-weight: bold; }
+        .status-aprovado { color: var(--success); font-weight: bold; }
+        .status-reprovado { color: var(--danger); font-weight: bold; }
+        
+        input { padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 200px; font-size: 16px; }
+
+        .logo { color: white; text-decoration: none; font-size: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<script>
+    // Segurança imediata
+    if (localStorage.getItem("usuarioLogado") !== "admin") {
+        window.location.href = "login.html";
+    }
+</script>
+
+<header>
+    <a href="financeiro.html" class="logo">Painel Administrativo</a>
+    <button class="btn btn-logout" onclick="logout()">Sair</button>
+</header>
+
+<div class="container">
+    <div class="cards">
+        <div class="card"><h3>Saldo Inicial</h3><p id="saldoInicialDisplay">R$ 0,00</p></div>
+        <div class="card"><h3>Total Reembolsos</h3><p id="totalReembolsos" style="color: var(--danger);">R$ 0,00</p></div>
+        <div class="card"><h3>Total Aportes</h3><p id="totalAportes" style="color: var(--success);">R$ 0,00</p></div>
+        <div class="card"><h3>Saldo em Caixa</h3><p id="saldoAtualDisplay">R$ 0,00</p></div>
+    </div>
+
+    <div class="config-caixa">
+        <div>
+            <strong>Ajustar Saldo Inicial:</strong><br>
+            <small>Define o valor de abertura do caixa</small>
+        </div>
+        <input type="text" id="valorCaixa" placeholder="Ex: 15000,00">
+        <button class="btn btn-primary" onclick="configurarSaldoInicial()">Definir Saldo</button>
+    </div>
+
+    <h2>Reembolsos</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th><th>Solicitante</th><th>Empresa</th><th>Valor</th>
+                <th>Status</th><th>Data</th><th>Anexo</th><th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="tabelaReembolsos"></tbody>
+    </table>
+
+    <h2>Aportes</h2>
+    <table>
+        <thead>
+            <tr><th>ID</th><th>Solicitante</th><th>Estabelecimento</th><th>Valor</th><th>Status</th><th>Data</th><th>Ações</th></tr>
+        </thead>
+        <tbody id="tabelaAportes"></tbody>
+    </table>
+
+    <h2>Outras Solicitações (Materiais/Uniformes)</h2>
+    <table>
+        <thead>
+            <tr><th>ID</th><th>Tipo</th><th>Item/Descrição</th><th>Qtd/Motivo</th><th>Status</th><th>Data</th><th>Ações</th></tr>
+        </thead>
+        <tbody id="tabelaOutros"></tbody>
+    </table>
+</div>
+
+<script>
+    function formatarMoeda(valor) {
+        return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    }
+
+    function logout() {
+        localStorage.removeItem("usuarioLogado");
+        window.location.href = "login.html";
+    }
+
+    function configurarSaldoInicial() {
+        let input = document.getElementById("valorCaixa").value.replace(/\./g, "").replace(",", ".");
+        let valor = parseFloat(input);
+        
+        if (isNaN(valor)) { alert("Digite um valor numérico válido."); return; }
+        
+        localStorage.setItem("saldoInicial", valor);
+        document.getElementById("valorCaixa").value = "";
+        atualizarDashboard();
+    }
+
+    function atualizarDashboard() {
+        const solicitacoes = JSON.parse(localStorage.getItem("solicitacoes")) || [];
+        const saldoInicial = parseFloat(localStorage.getItem("saldoInicial")) || 0;
+        
+        let somaReembolsos = 0;
+        let somaAportes = 0;
+
+        document.getElementById("tabelaReembolsos").innerHTML = "";
+        document.getElementById("tabelaAportes").innerHTML = "";
+        document.getElementById("tabelaOutros").innerHTML = "";
+
+        solicitacoes.forEach(s => {
+            const valorNum = parseFloat((s.valor || "0").toString().replace(/\./g, "").replace(",", "."));
+            
+            if (s.status === "Aprovado") {
+                if (s.tipo === "Reembolso") somaReembolsos += valorNum;
+                if (s.tipo === "Aporte") somaAportes += valorNum;
+            }
+
+            const acoes = s.status === "Pendente" ? `
+                <button class="btn btn-approve" onclick="mudarStatus('${s.id}', 'Aprovado')">✓</button>
+                <button class="btn btn-reject" onclick="mudarStatus('${s.id}', 'Reprovado')">✕</button>
+            ` : `<span style="font-size:12px; color:#999;">Processado</span>`;
+
+            if (s.tipo === "Reembolso") {
+                document.getElementById("tabelaReembolsos").innerHTML += `
+                    <tr>
+                        <td>${s.id}</td>
+                        <td>${s.solicitante || s.nome}</td>
+                        <td>${s.empresa || "-"}</td>
+                        <td>${formatarMoeda(valorNum)}</td>
+                        <td class="status-${s.status.toLowerCase()}">${s.status}</td>
+                        <td>${s.data || "-"}</td>
+                        <td><button class="btn btn-primary" style="padding:4px 8px" onclick="verDetalhes('${s.id}')">Ver</button></td>
+                        <td>${acoes}</td>
+                    </tr>`;
+            } else if (s.tipo === "Aporte") {
+                document.getElementById("tabelaAportes").innerHTML += `
+                    <tr>
+                        <td>${s.id}</td>
+                        <td>${s.solicitante || s.nome}</td>
+                        <td>${s.estabelecimento || "-"}</td>
+                        <td>${formatarMoeda(valorNum)}</td>
+                        <td class="status-${s.status.toLowerCase()}">${s.status}</td>
+                        <td>${s.data || "-"}</td>
+                        <td>${acoes}</td>
+                    </tr>`;
+            } else {
+                document.getElementById("tabelaOutros").innerHTML += `
+                    <tr>
+                        <td>${s.id}</td>
+                        <td>${s.tipo}</td>
+                        <td>${s.item || s.descricao || "-"}</td>
+                        <td>${s.qtd || s.motivo || "-"}</td>
+                        <td class="status-${s.status.toLowerCase()}">${s.status}</td>
+                        <td>${s.data || "-"}</td>
+                        <td>${acoes}</td>
+                    </tr>`;
+            }
+        });
+
+        const saldoFinal = saldoInicial + somaAportes - somaReembolsos;
+        document.getElementById("saldoInicialDisplay").textContent = formatarMoeda(saldoInicial);
+        document.getElementById("totalReembolsos").textContent = `- ${formatarMoeda(somaReembolsos)}`;
+        document.getElementById("totalAportes").textContent = `+ ${formatarMoeda(somaAportes)}`;
+        document.getElementById("saldoAtualDisplay").textContent = formatarMoeda(saldoFinal);
+    }
+
+    function mudarStatus(id, novoStatus) {
+        let solicitacoes = JSON.parse(localStorage.getItem("solicitacoes")) || [];
+        solicitacoes = solicitacoes.map(s => {
+            if (s.id == id) s.status = novoStatus;
+            return s;
+        });
+        localStorage.setItem("solicitacoes", JSON.stringify(solicitacoes));
+        atualizarDashboard();
+    }
+
+    function verDetalhes(id) {
+        const solicitacoes = JSON.parse(localStorage.getItem("solicitacoes")) || [];
+        const s = solicitacoes.find(x => x.id == id);
+        if (!s) return;
+
+        const win = window.open("", "_blank");
+        win.document.write(`
+            <html>
+            <head>
+                <title>Detalhes #${s.id}</title>
+                <style>
+                    body { font-family: sans-serif; padding: 30px; line-height: 1.6; color: #333; }
+                    .header { border-bottom: 2px solid #004080; margin-bottom: 20px; }
+                    img { max-width: 100%; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+                    .btn-print { background: #004080; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h2>Detalhes da Solicitação #${s.id}</h2>
+                </div>
+                <p><strong>Tipo:</strong> ${s.tipo}</p>
+                <p><strong>Solicitante:</strong> ${s.solicitante || s.nome}</p>
+                <p><strong>Valor:</strong> ${s.valor ? formatarMoeda(parseFloat(s.valor.replace(/\./g, '').replace(',', '.'))) : '-'}</p>
+                <p><strong>Status:</strong> ${s.status}</p>
+                <p><strong>Data:</strong> ${s.data || '-'}</p>
+                <hr>
+                ${s.anexo ? `<h3>Anexo/Comprovante:</h3><img src="${s.anexo}">` : "<p><em>Sem anexo disponível.</em></p>"}
+                <br><br>
+                <button class="btn-print" onclick="window.print()">Imprimir Detalhes</button>
+            </body>
+            </html>
+        `);
+    }
+
+    window.onload = atualizarDashboard;
+</script>
+</body>
+</html>

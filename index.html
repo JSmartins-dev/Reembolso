@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - Portal Maestro</title>
+  <link rel="stylesheet" href="azure.css">
+</head>
+<body>
+  <main class="login-container">
+    <form class="login-box" onsubmit="validarLogin(event)">
+      <h2>Portal Maestro</h2>
+
+      <label for="usuario">Usuário:</label>
+      <input type="text" id="usuario" placeholder="financeiro, vinicius, admin" required>
+
+      <label for="senha">Senha:</label>
+      <input type="password" id="senha" placeholder="Digite sua senha" required>
+
+      <button type="submit">Entrar</button>
+    </form>
+  </main>
+
+  <script>
+    // Usuários e senhas válidos
+    const usuarios = {
+      "financeiro": "1234",
+      "vinicius": "abcd",
+      "admin": "admin"
+    };
+
+    function validarLogin(event) {
+      event.preventDefault();
+
+      const usuario = document.getElementById("usuario").value;
+      const senha = document.getElementById("senha").value;
+
+      if (usuarios[usuario] && usuarios[usuario] === senha) {
+        alert("Login realizado com sucesso!");
+        window.location.href = "financeiro.html"; // redireciona para o portal
+      } else {
+        alert("Usuário ou senha inválidos!");
+      }
+    }
+  </script>
+</body>
+</html>

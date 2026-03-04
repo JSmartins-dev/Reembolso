@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Vinicius - Solicitações</title>
+  <link rel="stylesheet" href="azure.css">
+</head>
+<body>
+  <nav>
+    <ul>
+      <li><a href="index.html">Início</a></li>
+      <li><a href="financeiro.html">Financeiro</a></li>
+      <li><a href="vinicius.html">Vinicius</a></li>
+      <li><a href="admin.html">Admin</a></li>
+    </ul>
+  </nav>
+
+  <h2>Solicitações - Vinicius</h2>
+
+  <!-- Reembolso igual ao Financeiro -->
+  <h3>Reembolso</h3>
+  <form>
+    <label>Nome:</label><input type="text">
+    <label>Justificativa:</label><input type="text">
+    <label>Data da despesa:</label><input type="date">
+    <label>Valor:</label><input type="number" step="0.01">
+    <label>Comprovante:</label><input type="file">
+    <label>Empresa:</label>
+    <select>
+      <option>Kohi</option><option>Rochinha RSCI</option><option>Maestro</option>
+      <option>Oitta</option><option>Haitatsu</option><option>Kasato Maru</option>
+    </select>
+    <label>Dados bancários:</label><input type="text">
+    <button type="submit">Enviar</button>
+  </form>
+
+  <!-- Aporte -->
+  <h3>Aporte</h3>
+  <form>
+    <label>Nome:</label><input type="text">
+    <label>Estabelecimento:</label>
+    <select>
+      <option>Kohi</option><option>Rochinha RSCI</option><option>Maestro</option>
+      <option>Oitta</option><option>Haitatsu</option><option>Kasato Maru</option>
+    </select>
+    <label>Valor:</label><input type="number" step="0.01">
+    <label>Motivo:</label><input type="text">
+    <button type="submit">Enviar</button>
+  </form>
+
+  <!-- Uniforme / Material -->
+  <h3>Uniforme / Material</h3>
+  <form>
+    <label>Nome:</label><input type="text">
+    <label>Descrição do pedido:</label><input type="text">
+    <button type="submit">Solicitar</button>
+  </form>
+</body>
+</html>
