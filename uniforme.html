@@ -30,7 +30,7 @@
 
         label { display: block; margin-top: 15px; font-weight: bold; color: #333; font-size: 14px; }
 
-        input, textarea { 
+        input, textarea, select { 
             width: 100%; 
             padding: 12px; 
             margin-top: 5px; 
@@ -60,23 +60,23 @@
     </header>
 
     <main>
-        <h2>Novo Uniforme</h2>
-        <p class="info-text">Informe os itens necessários e o motivo da solicitação (ex: nova contratação ou desgaste).</p>
+        <h2>Solicitação de Uniforme</h2>
+        <p class="info-text">Informe os itens necessários e o motivo da solicitação.</p>
 
-        <form onsubmit="processarSolicitacao(event, 'Uniforme', this)">
+        <form id="uniformeForm" onsubmit="processarSolicitacao(event, 'Uniforme', this)">
             <label>Nome do Solicitante *</label>
             <input type="text" name="nome" placeholder="Seu nome completo" required>
 
-            <label>Estabelecimento / Unidade *</label>
-            <input type="text" name="estabelecimento" placeholder="Ex: Rochinha RSCI" required>
-
             <label>Descrição das peças e tamanhos *</label>
-            <textarea name="item" placeholder="Ex: 2 camisetas G, 1 calça 42..." required></textarea>
+            <textarea name="item" placeholder="Ex: Camiseta Polo Azul G, Calça Sarja 42..." required></textarea>
+
+            <label>Quantidade Total de Peças *</label>
+            <input type="number" name="qtd" min="1" value="1" required>
 
             <label>Motivo do pedido *</label>
-            <textarea name="descricao" placeholder="Ex: Desgaste natural das peças anteriores" required></textarea>
+            <textarea name="descricao" placeholder="Ex: Nova contratação ou substituição por desgaste" required></textarea>
 
-            <label>Anexo (Opcional - Foto ou Documento)</label>
+            <label>Anexo (Opcional - ex: foto do desgaste)</label>
             <input type="file" name="anexo" accept="image/*,.pdf">
 
             <div class="actions">
@@ -92,6 +92,11 @@
             const arquivo = form.anexo.files[0];
 
             if (arquivo) {
+                // Se o arquivo for muito grande, o localStorage pode travar
+                if (arquivo.size > 1024 * 1024) { // Limite de 1MB para segurança
+                    alert("O arquivo é muito grande. Por favor, anexe uma imagem menor (máx 1MB).");
+                    return;
+                }
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     salvarDados(tipo, form, e.target.result);
@@ -104,29 +109,27 @@
 
         function salvarDados(tipo, form, anexoBase64) {
             try {
-                // Montagem do objeto compatível com o Painel Admin e Minhas Solicitações
-                const solicitacao = {
-                    id: Date.now(),
-                    tipo: tipo,
-                    solicitante: form.nome.value.trim(),
-                    estabelecimento: form.estabelecimento.value.trim(),
-                    item: form.item.value.trim(),
-                    motivo: form.descricao.value.trim(), // Salvo como motivo para a tabela "Outros"
-                    data: new Date().toLocaleDateString('pt-BR'),
-                    status: "Pendente",
-                    anexo: anexoBase64 || ""
-                };
+                 const solicitacao = {
+    id: Date.now(),
+    tipo: tipo,
+    solicitante: form.nome.value.trim(),
+    item: form.item.value.trim(),
+    qtd: form.qtd.value,
+    data: new Date().toLocaleDateString('pt-BR'),
+    status: "Pendente",
+    anexo: anexoBase64 || ""
+};
 
                 const lista = JSON.parse(localStorage.getItem("solicitacoes")) || [];
                 lista.push(solicitacao);
                 localStorage.setItem("solicitacoes", JSON.stringify(lista));
 
-                alert("Solicitação de uniforme enviada com sucesso!");
+                alert("Solicitação enviada com sucesso!");
                 window.location.href = "minhas-solicitacoes.html";
                 
             } catch (error) {
                 console.error("Erro ao salvar:", error);
-                alert("Erro ao salvar. Tente um anexo menor ou verifique as permissões do navegador.");
+                alert("Erro ao salvar. Tente remover o anexo ou usar um navegador atualizado.");
             }
         }
     </script>

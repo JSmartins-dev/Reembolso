@@ -60,15 +60,14 @@
     </header>
 
     <main>
-        <h2>Novo Material</h2>
+        <h2>Solicitação de Material para Escritório</h2>
         <p class="info-text">Solicite materiais de escritório ou insumos para uso interno na sua unidade.</p>
 
         <form onsubmit="processarSolicitacao(event, 'Material', this)">
             <label>Solicitante *</label>
             <input type="text" name="nome" placeholder="Seu nome completo" required>
 
-            <label>Estabelecimento / Loja *</label>
-            <input type="text" name="estabelecimento" placeholder="Ex: Unidade Haitatsu" required>
+           
 
             <label>Descrição do Material (Itens) *</label>
             <textarea name="item" placeholder="Liste os produtos. Ex.: 2 Caixas de papel A4, 5 Canetas Azuis..." required></textarea>
@@ -76,7 +75,7 @@
             <label>Quantidade Total (Volumes) *</label>
             <input type="number" name="qtd" placeholder="Ex.: 7" required>
 
-            <label>Anexo (Opcional - Foto do estoque ou Referência)</label>
+            <label>Anexo</label>
             <input type="file" name="anexo" accept="image/*,.pdf">
 
             <div class="actions">
@@ -105,16 +104,15 @@
         function salvarNoLocalStorage(tipo, form, anexoBase64) {
             try {
                 const solicitacao = {
-                    id: Date.now(),
-                    tipo: tipo,
-                    solicitante: form.nome.value.trim(),
-                    estabelecimento: form.estabelecimento.value.trim(),
-                    item: form.item.value.trim(),
-                    qtd: form.qtd.value,
-                    data: new Date().toLocaleDateString('pt-BR'),
-                    status: "Pendente",
-                    anexo: anexoBase64 || ""
-                };
+    id: Date.now(),
+    tipo: tipo,
+    solicitante: form.nome.value.trim(),
+    item: form.item.value.trim(),
+    qtd: form.qtd.value,
+    data: new Date().toLocaleDateString('pt-BR'),
+    status: "Pendente",
+    anexo: anexoBase64 || ""
+};
 
                 const lista = JSON.parse(localStorage.getItem("solicitacoes")) || [];
                 lista.push(solicitacao);

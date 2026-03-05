@@ -11,7 +11,12 @@
             --light: #f4f6f9;
         }
 
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--light); margin: 0; padding: 0; }
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            background: var(--light); 
+            margin: 0; 
+            padding: 0; 
+        }
         
         header { 
             background: var(--primary); 
@@ -22,13 +27,36 @@
             align-items: center;
         }
 
-        header a { color: white; text-decoration: none; font-weight: bold; font-size: 1.2rem; }
+        header a { 
+            color: white; 
+            text-decoration: none; 
+            font-weight: bold; 
+            font-size: 1.2rem; 
+        }
 
-        main { max-width: 600px; margin: 30px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        main { 
+            max-width: 600px; 
+            margin: 30px auto; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+        }
 
-        h2 { color: var(--primary); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        h2 { 
+            color: var(--primary); 
+            margin-top: 0; 
+            border-bottom: 2px solid #eee; 
+            padding-bottom: 10px; 
+        }
 
-        label { display: block; margin-top: 15px; font-weight: bold; color: #333; font-size: 14px; }
+        label { 
+            display: block; 
+            margin-top: 15px; 
+            font-weight: bold; 
+            color: #333; 
+            font-size: 14px; 
+        }
 
         input, select { 
             width: 100%; 
@@ -37,17 +65,35 @@
             border: 1px solid #ccc; 
             border-radius: 4px; 
             box-sizing: border-box; 
-            font-size: 16px;
+            font-size: 16px; 
         }
 
-        .actions { margin-top: 25px; display: flex; gap: 10px; }
+        .actions { 
+            margin-top: 25px; 
+            display: flex; 
+            gap: 10px; 
+        }
 
-        .btn { flex: 1; padding: 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 16px; }
+        .btn { 
+            flex: 1; 
+            padding: 12px; 
+            border: none; 
+            border-radius: 4px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-size: 16px; 
+        }
+
         .btn-save { background: var(--secondary); color: white; }
         .btn-back { background: #eee; color: #333; }
         .btn:hover { opacity: 0.8; }
 
-        .info-text { font-size: 12px; color: #666; margin-bottom: 20px; }
+        .info-text { 
+            font-size: 12px; 
+            color: #666; 
+            margin-bottom: 20px; 
+        }
     </style>
 </head>
 <body>
@@ -62,17 +108,26 @@
         <p class="info-text">Preencha os dados abaixo para solicitar a entrada de valores no caixa.</p>
 
         <form id="formAporte" onsubmit="prepararSalvamento(event)">
-            <label>Solicitante *</label>
-            <input type="text" name="nome" placeholder="Seu nome completo" required>
+            <label for="nome">Solicitante *</label>
+            <input type="text" id="nome" name="nome" placeholder="Seu nome completo" required>
 
-            <label>Estabelecimento / Unidade *</label>
-            <input type="text" name="estabelecimento" placeholder="Ex: Unidade Kohi / Maestro" required>
+            <label for="empresa">Empresa *</label>
+            <select id="empresa" name="empresa" required>
+                <option value="">Selecione</option>
+                <option value="Kohi">Kohi</option>
+                <option value="Rochinha RSCI">Rochinha RSCI</option>
+                <option value="Haitatsu">Haitatsu</option>
+                <option value="Kasato Maru">Kasato Maru</option>
+            </select>
 
-            <label>Valor do Aporte (R$) *</label>
+            <label for="valorInput">Valor do Aporte (R$) *</label>
             <input type="text" id="valorInput" name="valor" placeholder="0,00" required>
 
-            <label>Comprovante (Opcional)</label>
-            <input type="file" name="anexo" accept="image/*,.pdf">
+            <label>Motivo*</label>
+            <textarea name="descricao" placeholder="Descreva brevemente o motivo do aporte" required></textarea>
+
+            <label for="anexo">Comprovante </label>
+            <input type="file" id="anexo" name="anexo" accept="image/*,.pdf">
 
             <div class="actions">
                 <button type="button" class="btn btn-back" onclick="window.location.href='financeiro.html'">Voltar</button>
@@ -82,7 +137,7 @@
     </main>
 
     <script>
-        // Máscara de Moeda (Igual à do Reembolso para manter o padrão)
+        // Máscara de Moeda
         const valorInput = document.getElementById('valorInput');
         valorInput.addEventListener('input', function(e) {
             let value = e.target.value.replace(/\D/g, "");
@@ -108,23 +163,21 @@
 
         function finalizarSalvamento(form, anexoBase64) {
             try {
-                // Criamos o objeto exatamente como o Painel Admin espera ler
                 const novaSolicitacao = {
                     id: Date.now(),
                     tipo: "Aporte",
                     solicitante: form.nome.value.trim(),
                     estabelecimento: form.estabelecimento.value.trim(),
-                    valor: form.valor.value, // Já formatado pela máscara
+                    empresa: form.empresa.value,
+                    valor: form.valor.value,
                     data: new Date().toLocaleDateString('pt-BR'),
-                    status: "Pendente", // Status inicial padrão
+                    status: "Pendente",
                     anexo: anexoBase64
                 };
 
-                // Busca solicitações existentes ou cria array vazio
                 const solicitacoes = JSON.parse(localStorage.getItem("solicitacoes")) || [];
                 solicitacoes.push(novaSolicitacao);
 
-                // Salva no LocalStorage
                 localStorage.setItem("solicitacoes", JSON.stringify(solicitacoes));
 
                 alert("Solicitação de aporte enviada com sucesso!");
