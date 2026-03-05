@@ -1,48 +1,69 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Portal Maestro</title>
-  <link rel="stylesheet" href="azure.css">
-  <style>
-    .inicio-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 80vh;
-      flex-direction: column;
-      text-align: center;
-    }
-    .inicio-container h1 {
-      color: #004080;
-      margin-bottom: 20px;
-    }
-    .inicio-container p {
-      color: #555;
-      margin-bottom: 30px;
-    }
-    .btn-entrar {
-      background-color: #0078d4;
-      color: #fff;
-      border: none;
-      padding: 12px 20px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: bold;
-      transition: background-color 0.3s ease;
-    }
-    .btn-entrar:hover {
-      background-color: #005a9e;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Maestro</title>
+    <style>
+        /* Reset básico para garantir que o layout ocupe a tela toda */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .inicio-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; /* Ocupa 100% da altura da tela */
+            flex-direction: column;
+            text-align: center;
+            background-color: #f4f7f9; /* Um fundo leve para combinar com o estilo Azure */
+        }
+
+        .inicio-container h1 {
+            color: #004080;
+            margin-bottom: 10px;
+        }
+
+        .inicio-container p {
+            color: #555;
+            margin-bottom: 30px;
+        }
+
+        .btn-entrar {
+            background-color: #0078d4;
+            color: #fff;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.1s;
+        }
+
+        .btn-entrar:hover {
+            background-color: #005a9e;
+        }
+
+        .btn-entrar:active {
+            transform: scale(0.98);
+        }
+    </style>
 </head>
 <body>
-  <main class="inicio-container">
-    <h1>Bem-vindo ao Portal Maestro</h1>
-    <p>Acesse o sistema para continuar</p>
-    <!-- Botão que leva para login.html -->
-    <button class="btn-entrar" onclick="window.location.href='login.html'">Entrar</button>
-  </main>
+
+    <main class="inicio-container">
+        <h1>Bem-vindo ao Portal Maestro</h1>
+        <p>Acesse o sistema para continuar</p>
+        
+        <button class="btn-entrar" onclick="window.location.href='login.html'">
+            Entrar
+        </button>
+    </main>
+
 </body>
 </html>
