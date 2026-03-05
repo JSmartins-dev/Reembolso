@@ -101,7 +101,7 @@
     </main>
 
     <script>
-        // Máscara simples para o valor (opcional, melhora a experiência)
+        // Máscara simples para o valor
         const valorInput = document.getElementById('valorInput');
         valorInput.addEventListener('input', function(e) {
             let value = e.target.value.replace(/\D/g, "");
@@ -113,48 +113,32 @@
             event.preventDefault();
 
             const arquivo = form.anexo.files[0];
+            const nomeArquivo = arquivo ? arquivo.name : "";
 
-            function registrarSolicitacao(anexoBase64) {
-                try {
-                    const solicitacao = {
-                        id: Date.now(),
-                        tipo: tipo,
-                        solicitante: form.nome.value,
-                        empresa: form.empresa.value,
-                        valor: form.valor.value,
-                        descricao: form.descricao.value,
-                        banco: form.banco.value,
-                        // Formata a data se existir, senão pega a data atual
-                        data: form.data.value ? new Date(form.data.value).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
-                        status: "Pendente",
-                        anexo: anexoBase64 || ""
-                    };
-
-                    let lista = JSON.parse(localStorage.getItem("solicitacoes")) || [];
-                    lista.push(solicitacao);
-                    
-                    localStorage.setItem("solicitacoes", JSON.stringify(lista));
-
-                    alert("Solicitação registrada com sucesso!");
-                    window.location.href = "minhas-solicitacoes.html";
-
-                } catch (e) {
-                    console.error(e);
-                    alert("Erro ao salvar! Se anexou uma imagem, tente uma menor.");
-                }
-            }
-
-            if (arquivo) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    registrarSolicitacao(e.target.result);
+            try {
+                const solicitacao = {
+                    id: Date.now(),
+                    tipo: tipo,
+                    solicitante: form.nome.value.trim(),
+                    empresa: form.empresa.value,
+                    valor: form.valor.value,
+                    descricao: form.descricao.value.trim(),
+                    banco: form.banco.value.trim(),
+                    data: form.data.value ? new Date(form.data.value).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
+                    status: "Pendente",
+                    anexo: nomeArquivo // salva apenas o nome do arquivo
                 };
-                reader.onerror = function() {
-                    alert("Erro ao ler o arquivo selecionado.");
-                };
-                reader.readAsDataURL(arquivo);
-            } else {
-                registrarSolicitacao("");
+
+                let lista = JSON.parse(localStorage.getItem("solicitacoes")) || [];
+                lista.push(solicitacao);
+                localStorage.setItem("solicitacoes", JSON.stringify(lista));
+
+                alert("Solicitação registrada com sucesso!");
+                window.location.href = "minhas-solicitacoes.html";
+
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao salvar. Tente sem anexo ou use um navegador atualizado.");
             }
         }
     </script>

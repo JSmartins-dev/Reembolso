@@ -11,88 +11,88 @@
             --light: #f4f6f9;
         }
 
-        body { 
-            font-family: 'Segoe UI', Arial, sans-serif; 
-            background: var(--light); 
-            margin: 0; 
-            padding: 0; 
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: var(--light);
+            margin: 0;
+            padding: 0;
         }
         
-        header { 
-            background: var(--primary); 
-            color: #fff; 
-            padding: 15px 30px; 
-            display: flex; 
-            justify-content: space-between; 
+        header {
+            background: var(--primary);
+            color: #fff;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
             align-items: center;
         }
 
-        header a { 
-            color: white; 
-            text-decoration: none; 
-            font-weight: bold; 
-            font-size: 1.2rem; 
+        header a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.2rem;
         }
 
-        main { 
-            max-width: 600px; 
-            margin: 30px auto; 
-            background: white; 
-            padding: 30px; 
-            border-radius: 8px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+        main {
+            max-width: 600px;
+            margin: 30px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
-        h2 { 
-            color: var(--primary); 
-            margin-top: 0; 
-            border-bottom: 2px solid #eee; 
-            padding-bottom: 10px; 
+        h2 {
+            color: var(--primary);
+            margin-top: 0;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
         }
 
-        label { 
-            display: block; 
-            margin-top: 15px; 
-            font-weight: bold; 
-            color: #333; 
-            font-size: 14px; 
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
         }
 
-        input, select { 
-            width: 100%; 
-            padding: 12px; 
-            margin-top: 5px; 
-            border: 1px solid #ccc; 
-            border-radius: 4px; 
-            box-sizing: border-box; 
-            font-size: 16px; 
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
         }
 
-        .actions { 
-            margin-top: 25px; 
-            display: flex; 
-            gap: 10px; 
+        .actions {
+            margin-top: 25px;
+            display: flex;
+            gap: 10px;
         }
 
-        .btn { 
-            flex: 1; 
-            padding: 12px; 
-            border: none; 
-            border-radius: 4px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            transition: 0.3s; 
-            font-size: 16px; 
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 16px;
         }
 
         .btn-save { background: var(--secondary); color: white; }
         .btn-back { background: #eee; color: #333; }
         .btn:hover { opacity: 0.8; }
 
-        .info-text { 
-            font-size: 12px; 
-            color: #666; 
-            margin-bottom: 20px; 
+        .info-text {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -107,7 +107,7 @@
         <h2>Novo Aporte</h2>
         <p class="info-text">Preencha os dados abaixo para solicitar a entrada de valores no caixa.</p>
 
-        <form id="formAporte" onsubmit="prepararSalvamento(event)">
+        <form id="formAporte" onsubmit="salvarAporte(event)">
             <label for="nome">Solicitante *</label>
             <input type="text" id="nome" name="nome" placeholder="Seu nome completo" required>
 
@@ -123,10 +123,10 @@
             <label for="valorInput">Valor do Aporte (R$) *</label>
             <input type="text" id="valorInput" name="valor" placeholder="0,00" required>
 
-            <label>Motivo*</label>
+            <label>Motivo *</label>
             <textarea name="descricao" placeholder="Descreva brevemente o motivo do aporte" required></textarea>
 
-            <label for="anexo">Comprovante </label>
+            <label for="anexo">Comprovante</label>
             <input type="file" id="anexo" name="anexo" accept="image/*,.pdf">
 
             <div class="actions">
@@ -145,34 +145,23 @@
             e.target.value = value;
         });
 
-        function prepararSalvamento(event) {
+        function salvarAporte(event) {
             event.preventDefault();
             const form = event.target;
             const arquivo = form.anexo.files[0];
+            const nomeArquivo = arquivo ? arquivo.name : "";
 
-            if (arquivo) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    finalizarSalvamento(form, e.target.result);
-                };
-                reader.readAsDataURL(arquivo);
-            } else {
-                finalizarSalvamento(form, "");
-            }
-        }
-
-        function finalizarSalvamento(form, anexoBase64) {
             try {
                 const novaSolicitacao = {
                     id: Date.now(),
                     tipo: "Aporte",
                     solicitante: form.nome.value.trim(),
-                    estabelecimento: form.estabelecimento.value.trim(),
                     empresa: form.empresa.value,
                     valor: form.valor.value,
+                    descricao: form.descricao.value.trim(),
                     data: new Date().toLocaleDateString('pt-BR'),
                     status: "Pendente",
-                    anexo: anexoBase64
+                    anexo: nomeArquivo // salva apenas o nome do arquivo
                 };
 
                 const solicitacoes = JSON.parse(localStorage.getItem("solicitacoes")) || [];
@@ -185,7 +174,7 @@
 
             } catch (error) {
                 console.error("Erro ao salvar:", error);
-                alert("Erro ao salvar. Verifique se o arquivo não é pesado demais.");
+                alert("Erro ao salvar. Tente sem anexo ou use um navegador atualizado.");
             }
         }
     </script>

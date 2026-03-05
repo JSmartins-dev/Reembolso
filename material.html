@@ -63,11 +63,9 @@
         <h2>Solicitação de Material para Escritório</h2>
         <p class="info-text">Solicite materiais de escritório ou insumos para uso interno na sua unidade.</p>
 
-        <form onsubmit="processarSolicitacao(event, 'Material', this)">
+        <form id="formMaterial" onsubmit="processarSolicitacao(event, 'Material', this)">
             <label>Solicitante *</label>
             <input type="text" name="nome" placeholder="Seu nome completo" required>
-
-           
 
             <label>Descrição do Material (Itens) *</label>
             <textarea name="item" placeholder="Liste os produtos. Ex.: 2 Caixas de papel A4, 5 Canetas Azuis..." required></textarea>
@@ -75,7 +73,7 @@
             <label>Quantidade Total (Volumes) *</label>
             <input type="number" name="qtd" placeholder="Ex.: 7" required>
 
-            <label>Anexo</label>
+            <label>Anexo (Opcional)</label>
             <input type="file" name="anexo" accept="image/*,.pdf">
 
             <div class="actions">
@@ -88,42 +86,44 @@
     <script>
         function processarSolicitacao(event, tipo, form) {
             event.preventDefault();
+            
+            // Pegamos o nome do arquivo se ele existir
             const arquivo = form.anexo.files[0];
+            const nomeArquivo = arquivo ? arquivo.name : null;
 
-            if (arquivo) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    salvarNoLocalStorage(tipo, form, e.target.result);
-                };
-                reader.readAsDataURL(arquivo);
-            } else {
-                salvarNoLocalStorage(tipo, form, null);
-            }
+            salvarNoLocalStorage(tipo, form, nomeArquivo);
         }
 
-        function salvarNoLocalStorage(tipo, form, anexoBase64) {
+        function salvarNoLocalStorage(tipo, form, anexoNome) {
             try {
+                // Criamos o objeto da solicitação
                 const solicitacao = {
-    id: Date.now(),
-    tipo: tipo,
-    solicitante: form.nome.value.trim(),
-    item: form.item.value.trim(),
-    qtd: form.qtd.value,
-    data: new Date().toLocaleDateString('pt-BR'),
-    status: "Pendente",
-    anexo: anexoBase64 || ""
-};
+                    id: Date.now(),
+                    tipo: tipo,
+                    solicitante: form.nome.value.trim(),
+                    // A "descricao" é o que aparece na sua tabela principal
+                    descricao: form.item.value.trim(), 
+                    qtd: form.qtd.value,
+                    data: new Date().toLocaleDateString('pt-BR'),
+                    status: "Pendente",
+                    anexo: anexoNome || "" 
+                };
 
+                // Recupera a lista atual ou cria uma nova
                 const lista = JSON.parse(localStorage.getItem("solicitacoes")) || [];
+                
+                // Adiciona a nova e salva
                 lista.push(solicitacao);
                 localStorage.setItem("solicitacoes", JSON.stringify(lista));
 
                 alert("Solicitação de material registrada com sucesso!");
+                
+                // Redireciona para a página da lista
                 window.location.href = "minhas-solicitacoes.html";
                 
             } catch (error) {
                 console.error("Erro ao salvar:", error);
-                alert("Erro ao salvar. Verifique se o arquivo não é muito grande.");
+                alert("Erro ao salvar os dados localmente.");
             }
         }
     </script>

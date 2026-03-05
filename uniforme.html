@@ -90,46 +90,37 @@
         function processarSolicitacao(event, tipo, form) {
             event.preventDefault();
             const arquivo = form.anexo.files[0];
+            const nomeArquivo = arquivo ? arquivo.name : null;
 
-            if (arquivo) {
-                // Se o arquivo for muito grande, o localStorage pode travar
-                if (arquivo.size > 1024 * 1024) { // Limite de 1MB para segurança
-                    alert("O arquivo é muito grande. Por favor, anexe uma imagem menor (máx 1MB).");
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    salvarDados(tipo, form, e.target.result);
-                };
-                reader.readAsDataURL(arquivo);
-            } else {
-                salvarDados(tipo, form, null);
-            }
+            salvarDados(tipo, form, nomeArquivo);
         }
 
-        function salvarDados(tipo, form, anexoBase64) {
+        function salvarDados(tipo, form, anexoNome) {
             try {
-                 const solicitacao = {
-    id: Date.now(),
-    tipo: tipo,
-    solicitante: form.nome.value.trim(),
-    item: form.item.value.trim(),
-    qtd: form.qtd.value,
-    data: new Date().toLocaleDateString('pt-BR'),
-    status: "Pendente",
-    anexo: anexoBase64 || ""
-};
+                const solicitacao = {
+                    id: Date.now(),
+                    tipo: tipo,
+                    solicitante: form.nome.value.trim(),
+                    item: form.item.value.trim(),
+                    qtd: form.qtd.value,
+                    descricao: form.descricao.value.trim(),
+                    data: new Date().toLocaleDateString('pt-BR'),
+                    status: "Pendente",
+                    anexo: anexoNome || "" // salva apenas o nome do arquivo
+                };
 
-                const lista = JSON.parse(localStorage.getItem("solicitacoes")) || [];
+                let lista = localStorage.getItem("solicitacoes");
+                lista = lista ? JSON.parse(lista) : [];
+
                 lista.push(solicitacao);
                 localStorage.setItem("solicitacoes", JSON.stringify(lista));
 
                 alert("Solicitação enviada com sucesso!");
                 window.location.href = "minhas-solicitacoes.html";
-                
+
             } catch (error) {
                 console.error("Erro ao salvar:", error);
-                alert("Erro ao salvar. Tente remover o anexo ou usar um navegador atualizado.");
+                alert("Erro ao salvar. Tente sem anexo ou use um navegador atualizado.");
             }
         }
     </script>

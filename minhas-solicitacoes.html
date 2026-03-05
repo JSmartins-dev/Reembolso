@@ -2,12 +2,23 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Minhas Solicitações</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minhas Solicitações - MAESTRO</title>
   <link rel="stylesheet" href="azure.css">
+  <style>
+    /* Estilos rápidos para garantir a organização caso o azure.css falhe */
+    .portal { display: flex; gap: 20px; margin-top: 30px; flex-wrap: wrap; }
+    section { border: 1px solid #ddd; padding: 15px; border-radius: 8px; flex: 1; min-width: 250px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #f4f4f4; }
+    .btn-danger { background-color: #ff4d4d; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 4px; margin-top: 20px; }
+  </style>
 </head>
 <body>
-  <header>
-    <a href="financeiro.html">MAESTRO</a>
+
+  <header style="padding: 20px; border-bottom: 1px solid #eee;">
+    <h1 style="display: inline; margin-right: 20px;">MAESTRO</h1>
     <button onclick="window.location.href='financeiro.html'">Voltar</button>
   </header>
 
@@ -24,54 +35,70 @@
           <th>Status</th>
         </tr>
       </thead>
-      <tbody id="listaSolicitacoes"></tbody>
+      <tbody id="listaSolicitacoes">
+        </tbody>
     </table>
+
+    <button class="btn-danger" onclick="limparSolicitacoes()">Limpar Histórico</button>
+
+    <hr style="margin: 40px 0;">
+
+    <div class="portal">
+      <section>
+        <h3>Solicitar Reembolso</h3>
+        <p>Registre despesas pagas com recursos próprios e anexe o comprovante.</p>
+        <button onclick="window.location.href='reembolso.html'">Abrir Reembolso</button>
+      </section>
+
+      <section>
+        <h3>Solicitar Material</h3>
+        <p>Solicite materiais de escritório para uso interno.</p>
+        <button onclick="window.location.href='material.html'">Abrir solicitação</button>
+      </section>
+
+      <section>
+        <h3>Solicitar Uniforme</h3>
+        <p>Informe tamanho e quantidade para o uniforme.</p>
+        <button onclick="window.location.href='uniforme.html'">Abrir solicitação</button>
+      </section>
+    </div>
   </main>
 
   <script>
+    // Função para carregar os dados do LocalStorage
     function carregarSolicitacoes() {
-      let lista = JSON.parse(localStorage.getItem("solicitacoes")) || [];
+      const lista = JSON.parse(localStorage.getItem("solicitacoes")) || [];
       const tbody = document.getElementById("listaSolicitacoes");
       tbody.innerHTML = "";
+
+      if (lista.length === 0) {
+        tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Nenhuma solicitação encontrada.</td></tr>";
+        return;
+      }
 
       lista.forEach(s => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${s.tipo}</td>
-          <td>${s.data}</td>
-          <td>${s.descricao}</td>
-          <td>${s.status}</td>
+          <td>${s.tipo || '-'}</td>
+          <td>${s.data || '-'}</td>
+          <td>${s.descricao || '-'}</td>
+          <td><strong>${s.status || 'Pendente'}</strong></td>
         `;
         tbody.appendChild(tr);
       });
     }
 
-    carregarSolicitacoes();
+    // Função para apagar o histórico
+    function limparSolicitacoes() {
+      if (confirm("Tem certeza que deseja apagar todo o histórico?")) {
+        localStorage.removeItem("solicitacoes");
+        alert("Histórico de solicitações apagado!");
+        carregarSolicitacoes(); // Atualiza a tela sem precisar de reload completo
+      }
+    }
+
+    // Inicializa a tabela ao carregar a página
+    window.onload = carregarSolicitacoes;
   </script>
 </body>
 </html>
-<div class="portal">
-  <section>
-    <h3>Solicitar Reembolso</h3>
-    <p>Registre despesas pagas com recursos próprios e anexe o comprovante.</p>
-    <div class="actions">
-      <button onclick="window.location.href='reembolso.html'">Abrir Reembolso</button>
-    </div>
-  </section>
-
-  <section>
-    <h3>Solicitar Material</h3>
-    <p>Solicite materiais de escritório para uso interno.</p>
-    <div class="actions">
-      <button onclick="window.location.href='material.html'">Abrir solicitação</button>
-    </div>
-  </section>
-
-  <section>
-    <h3>Solicitar Uniforme</h3>
-    <p>Informe tamanho e quantidade para o uniforme.</p>
-    <div class="actions">
-      <button onclick="window.location.href='uniforme.html'">Abrir solicitação</button>
-    </div>
-  </section>
-</div>
