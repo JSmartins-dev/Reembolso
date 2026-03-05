@@ -2,216 +2,47 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Login - Portal Maestro</title>
+  <title>Portal Maestro</title>
   <link rel="stylesheet" href="azure.css">
-</head>
-<body>
-  <main class="login-container">
-    <form class="login-box" onsubmit="validarLogin(event)">
-      <h2>Portal Maestro</h2>
-
-      <label for="usuario">Usuário:</label>
-      <input type="text" id="usuario" placeholder="financeiro, vinicius, admin" required>
-
-      <label for="senha">Senha:</label>
-      <input type="password" id="senha" placeholder="Digite sua senha" required>
-
-      <button type="submit">Entrar</button>
-    </form>
-  </main>
-
-  <script>
-    // Usuários e senhas válidos
-    const usuarios = {
-      "financeiro": "1234",
-      "vinicius": "abcd",
-      "admin": "admin"
-    };
-
-    function validarLogin(event) {
-      event.preventDefault();
-
-      const usuario = document.getElementById("usuario").value;
-      const senha = document.getElementById("senha").value;
-
-      if (usuarios[usuario] && usuarios[usuario] === senha) {
-        alert("Login realizado com sucesso!");
-        window.location.href = "financeiro.html"; // redireciona para o portal
-      } else {
-        alert("Usuário ou senha inválidos!");
-      }
-    }
-  </script>
-</body>
-</html><!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title> Maestro - Login</title>
   <style>
-    /* Estilo inspirado no Azure/Modern UI */
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #e6f0ff;
+    .inicio-container {
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-
-    .login-panel {
-      background: #fff;
-      display: flex;
-      flex-direction: row;
-      overflow: hidden;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-      width: 700px;
-      min-height: 350px;
-    }
-
-    /* Lado Esquerdo - Branding */
-    .login-left {
-      flex: 1;
-      background: #004080;
-      color: #fff;
-      display: flex;
+      height: 80vh;
       flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 40px;
       text-align: center;
     }
-
-    .login-left h1 {
-      margin: 0;
-      font-size: 28px;
-      letter-spacing: 1px;
-    }
-
-    .login-left p {
-      font-size: 14px;
-      opacity: 0.8;
-      margin-top: 10px;
-    }
-
-    /* Lado Direito - Form */
-    .login-right {
-      flex: 1.2;
-      padding: 50px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-
-    .login-right h2 {
-      margin-bottom: 25px;
-      color: #333;
-      font-size: 20px;
-    }
-
-    .login-right label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-      color: #555;
-      font-size: 14px;
-    }
-
-    .login-right input {
-      width: 100%;
-      padding: 12px;
+    .inicio-container h1 {
+      color: #004080;
       margin-bottom: 20px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      box-sizing: border-box; /* Garante que o padding não quebre a largura */
-      transition: border 0.3s;
     }
-
-    .login-right input:focus {
-      border-color: #0066cc;
-      outline: none;
+    .inicio-container p {
+      color: #555;
+      margin-bottom: 30px;
     }
-
-    .login-right button {
-      width: 100%;
-      padding: 12px;
-      background: #0066cc;
+    .btn-entrar {
+      background-color: #0078d4;
       color: #fff;
       border: none;
+      padding: 12px 20px;
       border-radius: 6px;
-      font-weight: bold;
-      font-size: 16px;
       cursor: pointer;
-      transition: background 0.3s ease;
+      font-size: 16px;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
     }
-
-    .login-right button:hover {
-      background: #005bb5;
-    }
-
-    /* Responsividade simples */
-    @media (max-width: 600px) {
-      .login-panel {
-        flex-direction: column;
-        width: 90%;
-      }
-      .login-left { padding: 20px; }
+    .btn-entrar:hover {
+      background-color: #005a9e;
     }
   </style>
 </head>
 <body>
-
-  <div class="login-panel">
-    <div class="login-left">
-      <h1>Portal Maestro</h1>
-      <p>Gestão Inteligente & Financeira</p>
-    </div>
-    
-    <div class="login-right">
-      <h2>Acesse sua conta</h2>
-      <form id="loginForm">
-        <label for="usuario">Usuário</label>
-        <input type="text" id="usuario" placeholder="Digite seu usuário" required>
-
-        <label for="senha">Senha</label>
-        <input type="password" id="senha" placeholder="••••••••" required>
-
-        <button type="submit">Entrar</button>
-      </form>
-    </div>
-  </div>
-
-  <script>
-    // Banco de dados de usuários simulado
-    const baseUsuarios = {
-      "admin": { senha: "admin", redirect: "painel-admin.html" },
-      "financeiro": { senha: "1234", redirect: "financeiro.html" },
-      "vinicius": { senha: "abcd", redirect: "financeiro.html" },
-      "financeiro.adm": { senha: "adm123", redirect: "financeiro.html" }
-    };
-
-    document.getElementById("loginForm").addEventListener("submit", function(event) {
-      event.preventDefault();
-
-      const userIn = document.getElementById("usuario").value.trim().toLowerCase();
-      const passIn = document.getElementById("senha").value;
-
-      const usuarioEncontrado = baseUsuarios[userIn];
-
-      if (usuarioEncontrado && usuarioEncontrado.senha === passIn) {
-        // Salva o estado do login
-        localStorage.setItem("usuarioLogado", userIn);
-        
-        // Redireciona conforme o nível de acesso
-        window.location.href = usuarioEncontrado.redirect;
-      } else {
-        alert("Usuário ou senha incorretos. Tente novamente.");
-      }
-    });
-  </script>
-
+  <main class="inicio-container">
+    <h1>Bem-vindo ao Portal Maestro</h1>
+    <p>Acesse o sistema para continuar</p>
+    <!-- Botão que leva para login.html -->
+    <button class="btn-entrar" onclick="window.location.href='login.html'">Entrar</button>
+  </main>
 </body>
 </html>
