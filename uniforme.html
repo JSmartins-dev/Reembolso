@@ -9,9 +9,10 @@
             --primary: #004080;
             --secondary: #0066cc;
             --light: #f4f6f9;
+            --success: #28a745;
         }
 
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--light); margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--light); margin: 0; padding: 0; color: #333; }
         
         header { 
             background: var(--primary); 
@@ -20,6 +21,7 @@
             display: flex; 
             justify-content: space-between; 
             align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
         header a { color: white; text-decoration: none; font-weight: bold; font-size: 1.2rem; }
@@ -28,59 +30,61 @@
 
         h2 { color: var(--primary); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
 
-        label { display: block; margin-top: 15px; font-weight: bold; color: #333; font-size: 14px; }
+        label { display: block; margin-top: 15px; font-weight: bold; color: #444; font-size: 14px; }
 
         input, textarea, select { 
             width: 100%; 
             padding: 12px; 
             margin-top: 5px; 
             border: 1px solid #ccc; 
-            border-radius: 4px; 
+            border-radius: 6px; 
             box-sizing: border-box; 
             font-size: 16px;
+            transition: border 0.3s;
         }
 
-        textarea { height: 90px; resize: vertical; }
+        input:focus, textarea:focus { border-color: var(--secondary); outline: none; }
+        textarea { height: 80px; resize: vertical; }
 
         .actions { margin-top: 25px; display: flex; gap: 10px; }
 
-        .btn { flex: 1; padding: 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 16px; }
+        .btn { flex: 1; padding: 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 16px; }
         .btn-save { background: var(--secondary); color: white; }
-        .btn-back { background: #eee; color: #333; }
-        .btn:hover { opacity: 0.8; }
+        .btn-back { background: #e0e0e0; color: #333; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
 
-        .info-text { font-size: 12px; color: #666; margin-bottom: 20px; }
+        .info-text { font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.4; }
     </style>
 </head>
 <body>
 
     <header>
         <a href="financeiro.html">MAESTRO</a>
-        <span style="font-size: 14px;">Solicitação de Uniforme</span>
+        <span style="font-size: 14px; opacity: 0.9;">Módulo Suprimentos</span>
     </header>
 
     <main>
         <h2>Solicitação de Uniforme</h2>
-        <p class="info-text">Informe os itens necessários e o motivo da solicitação.</p>
+        <p class="info-text">Preencha os campos abaixo. Itens com asterisco (*) são obrigatórios.</p>
 
         <form id="uniformeForm" onsubmit="processarSolicitacao(event, 'Uniforme', this)">
             <label>Nome do Solicitante *</label>
             <input type="text" name="nome" placeholder="Seu nome completo" required>
 
             <label>Descrição das peças e tamanhos *</label>
-            <textarea name="item" placeholder="Ex: Camiseta Polo Azul G, Calça Sarja 42..." required></textarea>
+            <textarea name="item" placeholder="Ex: 2 Camisetas Polo G (Azul), 1 Calça 42" required></textarea>
 
             <label>Quantidade Total de Peças *</label>
             <input type="number" name="qtd" min="1" value="1" required>
 
             <label>Motivo do pedido *</label>
-            <textarea name="descricao" placeholder="Ex: Nova contratação ou substituição por desgaste" required></textarea>
+            <textarea name="descricao" placeholder="Ex: Substituição por tempo de uso" required></textarea>
 
-            <label>Anexo (Opcional - ex: foto do desgaste)</label>
+            <label>Anexo (Opcional)</label>
             <input type="file" name="anexo" accept="image/*,.pdf">
 
             <div class="actions">
-                <button type="button" class="btn btn-back" onclick="window.location.href='financeiro.html'">Voltar</button>
+                <button type="button" class="btn btn-back" onclick="window.location.href='financeiro.html'">Cancelar</button>
                 <button type="submit" class="btn btn-save">Enviar Solicitação</button>
             </div>
         </form>
@@ -89,38 +93,54 @@
     <script>
         function processarSolicitacao(event, tipo, form) {
             event.preventDefault();
+            
             const arquivo = form.anexo.files[0];
-            const nomeArquivo = arquivo ? arquivo.name : null;
 
-            salvarDados(tipo, form, nomeArquivo);
+            // Se houver arquivo, converte para Base64, senão envia com anexo vazio
+            if (arquivo) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64 = e.target.result;
+                    montarObjetoESalvar(tipo, form, base64);
+                };
+                reader.readAsDataURL(arquivo);
+            } else {
+                montarObjetoESalvar(tipo, form, "");
+            }
         }
 
-        function salvarDados(tipo, form, anexoNome) {
+        function montarObjetoESalvar(tipo, form, anexoData) {
+            const solicitacao = {
+                id: Date.now(),
+                tipo: tipo,
+                nome: form.nome.value.trim(),
+                item: form.item.value.trim(),
+                qtd: form.qtd.value,
+                descricao: form.descricao.value.trim(),
+                data: new Date().toLocaleDateString('pt-BR'),
+                status: "Pendente",
+                anexo: anexoData
+            };
+
+            salvarNoLocalStorage(solicitacao);
+        }
+
+        function salvarNoLocalStorage(objeto) {
             try {
-                const solicitacao = {
-                    id: Date.now(),
-                    tipo: tipo,
-                    solicitante: form.nome.value.trim(),
-                    item: form.item.value.trim(),
-                    qtd: form.qtd.value,
-                    descricao: form.descricao.value.trim(),
-                    data: new Date().toLocaleDateString('pt-BR'),
-                    status: "Pendente",
-                    anexo: anexoNome || "" // salva apenas o nome do arquivo
-                };
-
-                let lista = localStorage.getItem("solicitacoes");
-                lista = lista ? JSON.parse(lista) : [];
-
-                lista.push(solicitacao);
+                // Recupera a lista atual ou cria uma nova
+                const lista = JSON.parse(localStorage.getItem("solicitacoes")) || [];
+                
+                // Adiciona a nova solicitação
+                lista.push(objeto);
+                
+                // Salva de volta no LocalStorage
                 localStorage.setItem("solicitacoes", JSON.stringify(lista));
 
                 alert("Solicitação enviada com sucesso!");
-                window.location.href = "minhas-solicitacoes.html";
-
+                window.location.href = "financeiro.html"; // Ajuste para sua página de destino
             } catch (error) {
                 console.error("Erro ao salvar:", error);
-                alert("Erro ao salvar. Tente sem anexo ou use um navegador atualizado.");
+                alert("Erro ao salvar dados. Verifique se o anexo não é muito grande.");
             }
         }
     </script>

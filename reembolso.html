@@ -64,7 +64,7 @@
         <p class="info-text">Preencha os dados e anexe o comprovante (campos com * são obrigatórios).</p>
 
         <form onsubmit="salvarSolicitacao(event, 'Reembolso', this)">
-            <label>Nome do colaborador *</label>
+            <label>Nome do Solicitante *</label>
             <input type="text" name="nome" placeholder="Ex.: Jeniffer Martins" required>
 
             <label>Empresa *</label>
@@ -82,16 +82,16 @@
             <input type="date" name="data">
 
             <label>Valor (R$) *</label>
-            <input type="text" name="valor" id="valorInput" placeholder="0.000,00" required>
+            <input type="text" id="valorInput" name="valor" placeholder="0,00" required>
 
             <label>Justificativa/Descrição *</label>
             <textarea name="descricao" placeholder="Descreva brevemente o motivo da despesa..." required></textarea>
 
-            <label>Dados Bancários (ou PIX) *</label>
-            <input type="text" name="banco" placeholder="Banco, Agência, Conta ou Chave PIX" required>
+            <label>Pagamento em espécie*</label>
+            <input type="text" name="banco" placeholder=>
 
-            <label>Anexo (Comprovante)</label>
-            <input type="file" name="anexo" accept="image/*,.pdf">
+            <label>Anexo (Imagem ou PDF) *</label>
+            <input type="file" name="anexo" id="anexoInput" accept="image/*,application/pdf" required>
 
             <div class="actions">
                 <button type="button" class="btn btn-back" onclick="window.location.href='financeiro.html'">Cancelar</button>
@@ -101,7 +101,7 @@
     </main>
 
     <script>
-        // Máscara simples para o valor
+        // Máscara para o valor (R$)
         const valorInput = document.getElementById('valorInput');
         valorInput.addEventListener('input', function(e) {
             let value = e.target.value.replace(/\D/g, "");
@@ -111,10 +111,27 @@
 
         function salvarSolicitacao(event, tipo, form) {
             event.preventDefault();
-
             const arquivo = form.anexo.files[0];
-            const nomeArquivo = arquivo ? arquivo.name : "";
 
+            if (arquivo) {
+                // Limite de 2MB para PDFs e Imagens no LocalStorage
+                if (arquivo.size > 2 * 1024 * 1024) {
+                    alert("Arquivo muito grande! O limite é de 2MB para garantir o salvamento.");
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const dadosBase64 = e.target.result;
+                    processarGravacao(tipo, form, dadosBase64);
+                };
+                reader.readAsDataURL(arquivo);
+            } else {
+                processarGravacao(tipo, form, null);
+            }
+        }
+
+        function processarGravacao(tipo, form, anexoDados) {
             try {
                 const solicitacao = {
                     id: Date.now(),
@@ -124,21 +141,21 @@
                     valor: form.valor.value,
                     descricao: form.descricao.value.trim(),
                     banco: form.banco.value.trim(),
-                    data: form.data.value ? new Date(form.data.value).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
+                    data: form.data.value ? new Date(form.data.value + 'T00:00:00').toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
                     status: "Pendente",
-                    anexo: nomeArquivo // salva apenas o nome do arquivo
+                    anexo: anexoDados // Salva os dados Base64 do PDF ou Imagem
                 };
 
                 let lista = JSON.parse(localStorage.getItem("solicitacoes")) || [];
                 lista.push(solicitacao);
                 localStorage.setItem("solicitacoes", JSON.stringify(lista));
 
-                alert("Solicitação registrada com sucesso!");
+                alert("Solicitação enviada com sucesso!");
                 window.location.href = "minhas-solicitacoes.html";
 
             } catch (e) {
                 console.error(e);
-                alert("Erro ao salvar. Tente sem anexo ou use um navegador atualizado.");
+                alert("Erro: O arquivo PDF é muito pesado para o armazenamento local. Tente um arquivo menor.");
             }
         }
     </script>

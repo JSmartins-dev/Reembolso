@@ -107,8 +107,8 @@
         <h2>Novo Aporte</h2>
         <p class="info-text">Preencha os dados abaixo para solicitar a entrada de valores no caixa.</p>
 
-        <form id="formAporte" onsubmit="salvarAporte(event)">
-            <label for="nome">Solicitante *</label>
+        <form id="formAporte" onsubmit="prepararEnvio(event)">
+            <label for="nome">Nome do Solicitante *</label>
             <input type="text" id="nome" name="nome" placeholder="Seu nome completo" required>
 
             <label for="empresa">Empresa *</label>
@@ -124,9 +124,9 @@
             <input type="text" id="valorInput" name="valor" placeholder="0,00" required>
 
             <label>Motivo *</label>
-            <textarea name="descricao" placeholder="Descreva brevemente o motivo do aporte" required></textarea>
+            <textarea name="descricao" id="descricao" placeholder="Descreva brevemente o motivo do aporte" required></textarea>
 
-            <label for="anexo">Comprovante</label>
+            <label for="anexo">Anexo *</label>
             <input type="file" id="anexo" name="anexo" accept="image/*,.pdf">
 
             <div class="actions">
@@ -145,36 +145,57 @@
             e.target.value = value;
         });
 
-        function salvarAporte(event) {
+        // Função principal de envio
+        function prepararEnvio(event) {
             event.preventDefault();
             const form = event.target;
             const arquivo = form.anexo.files[0];
-            const nomeArquivo = arquivo ? arquivo.name : "";
 
+            if (arquivo) {
+                // Limite de 2MB para evitar travar o LocalStorage
+                if (arquivo.size > 2 * 1024 * 1024) {
+                    alert("Arquivo muito grande! O limite é de 2MB.");
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    processarGravacao(form, e.target.result);
+                };
+                reader.readAsDataURL(arquivo);
+            } else {
+                processarGravacao(form, null);
+            }
+        }
+
+        function processarGravacao(form, anexoBase64) {
             try {
+                // Limpa o valor para formato numérico (ex: 1.500,00 -> 1500.00)
+                const valorLimpo = form.valor.value.replace(/\./g, '').replace(',', '.');
+
                 const novaSolicitacao = {
                     id: Date.now(),
                     tipo: "Aporte",
-                    solicitante: form.nome.value.trim(),
+                    nome: form.nome.value.trim(),
                     empresa: form.empresa.value,
                     valor: form.valor.value,
                     descricao: form.descricao.value.trim(),
                     data: new Date().toLocaleDateString('pt-BR'),
                     status: "Pendente",
-                    anexo: nomeArquivo // salva apenas o nome do arquivo
+                    anexo: anexoBase64
                 };
 
-                const solicitacoes = JSON.parse(localStorage.getItem("solicitacoes")) || [];
-                solicitacoes.push(novaSolicitacao);
-
-                localStorage.setItem("solicitacoes", JSON.stringify(solicitacoes));
+                // Salva no LocalStorage
+                let lista = JSON.parse(localStorage.getItem("solicitacoes")) || [];
+                lista.push(novaSolicitacao);
+                localStorage.setItem("solicitacoes", JSON.stringify(lista));
 
                 alert("Solicitação de aporte enviada com sucesso!");
                 window.location.href = "minhas-solicitacoes.html";
 
             } catch (error) {
                 console.error("Erro ao salvar:", error);
-                alert("Erro ao salvar. Tente sem anexo ou use um navegador atualizado.");
+                alert("Erro ao salvar. Verifique o tamanho do anexo ou tente outro navegador.");
             }
         }
     </script>
