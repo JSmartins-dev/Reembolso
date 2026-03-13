@@ -85,7 +85,8 @@
             <tbody id="listaSolicitacoes"></tbody>
         </table>
 
-        <button class="btn btn-danger" onclick="limparHistoricoIndividual()">Limpar Histórico</button>
+        <!-- Botão de apagar histórico -->
+        <button class="btn btn-danger" onclick="limparHistoricoIndividual()">Apagar Histórico</button>
     </div>
 </main>
 
@@ -103,9 +104,8 @@
 
         // 2. Filtro de Visualização: Admin vê tudo, Usuário vê o dele
         const minhasSolicitacoes = listaGeral.filter(s => {
-            if (usuarioAtual === "admin") return true; //
+            if (usuarioAtual === "admin") return true;
 
-            // Procura o nome do usuário em múltiplos campos para evitar erros
             const nome1 = (s.solicitante || "").toLowerCase().trim();
             const nome2 = (s.nome || "").toLowerCase().trim();
             const nome3 = (s.usuario || "").toLowerCase().trim();
@@ -141,14 +141,17 @@
 
     // 4. Lógica de Limpeza Diferenciada
     function limparHistoricoIndividual() {
-        if (confirm(usuarioAtual === "admin" ? "ADMIN: Deseja apagar TODO o banco de dados?" : `Limpar seu histórico, ${usuarioAtual}?`)) {
+        const mensagem = usuarioAtual === "admin" 
+            ? "ADMIN: Deseja apagar TODO o banco de dados?" 
+            : `Deseja apagar DEFINITIVAMENTE seu histórico, ${usuarioAtual}?`;
+
+        if (confirm(mensagem)) {
             let listaGeral = JSON.parse(localStorage.getItem("solicitacoes")) || [];
             let novaLista;
 
             if (usuarioAtual === "admin") {
                 novaLista = []; // Admin limpa tudo
             } else {
-                // Usuário limpa apenas o que bate com o nome dele
                 novaLista = listaGeral.filter(s => {
                     const n1 = (s.solicitante || "").toLowerCase().trim();
                     const n2 = (s.nome || "").toLowerCase().trim();
@@ -157,7 +160,7 @@
             }
 
             localStorage.setItem("solicitacoes", JSON.stringify(novaLista));
-            alert("Histórico atualizado!");
+            alert("Histórico apagado com sucesso!");
             carregarSolicitacoes();
         }
     }

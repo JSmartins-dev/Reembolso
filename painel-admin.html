@@ -11,6 +11,7 @@
             --success: #28a745;
             --danger: #dc3545;
             --light: #f4f6f9;
+            --white: #ffffff;
         }
 
         body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--light); margin: 0; padding: 0; }
@@ -27,40 +28,78 @@
 
         .container { padding: 20px; max-width: 1200px; margin: auto; }
         
-        h2 { color: var(--primary); border-left: 5px solid var(--secondary); padding-left: 10px; margin-top: 30px; }
+        h2 { color: var(--primary); border-left: 5px solid var(--secondary); padding-left: 10px; margin-top: 30px; margin-bottom: 15px; }
 
-        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center; }
-        .card h3 { margin: 0 0 10px 0; font-size: 13px; color: #666; text-transform: uppercase; }
-        .card p { font-size: 22px; font-weight: bold; margin: 0; color: var(--secondary); }
+        .cards-resumo { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .card-financeiro { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center; }
+        .card-financeiro h3 { margin: 0 0 10px 0; font-size: 13px; color: #666; text-transform: uppercase; }
+        .card-financeiro p { font-size: 22px; font-weight: bold; margin: 0; color: var(--secondary); }
 
         .config-caixa { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
         
-        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-        table th { background: var(--primary); color: #fff; font-weight: 500; }
+        /* Estilização dos Novos Blocos (Cards de Solicitação) */
+        .grid-solicitacoes { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 20px; 
+            margin-bottom: 40px;
+        }
+
+        .block-card {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            border-top: 4px solid var(--secondary);
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        .block-card:hover { transform: translateY(-3px); }
+
+        .block-card h4 { margin: 0 0 10px 0; color: var(--primary); font-size: 18px; display: flex; justify-content: space-between; }
+        .block-card p { margin: 5px 0; font-size: 14px; color: #444; }
+        .block-card .label { font-weight: bold; color: #777; }
+        .block-card .valor { font-size: 18px; font-weight: bold; color: var(--primary); margin: 10px 0; }
         
+        .block-card .status { 
+            display: inline-block; 
+            padding: 4px 8px; 
+            border-radius: 4px; 
+            font-size: 12px; 
+            font-weight: bold; 
+            margin-bottom: 10px;
+        }
+
+        .block-footer { 
+            margin-top: 15px; 
+            padding-top: 15px; 
+            border-top: 1px solid #eee; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+        }
+
+        /* Botões */
         .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; font-size: 14px; }
-        .btn-approve { background: var(--success); color: white; margin-right: 5px; }
+        .btn-approve { background: var(--success); color: white; }
         .btn-reject { background: var(--danger); color: white; }
         .btn-primary { background: var(--secondary); color: white; }
         .btn-logout { background: transparent; border: 1px solid white; color: white; }
-        .btn:hover { opacity: 0.8; }
+        .btn-toggle { background: #6c757d; color: white; margin-bottom: 20px; width: 100%; }
         
-        .status-pendente { color: #f39c12; font-weight: bold; }
-        .status-aprovado { color: var(--success); font-weight: bold; }
-        .status-reprovado { color: var(--danger); font-weight: bold; }
+        .status-pendente { background: #fff3cd; color: #856404; }
+        .status-aprovado { background: #d4edda; color: #155724; }
+        .status-reprovado { background: #f8d7da; color: #721c24; }
         
         input { padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 200px; font-size: 16px; }
         .logo { color: white; text-decoration: none; font-size: 20px; font-weight: bold; }
-
-        .acoes-container { display: flex; gap: 5px; }
+        .acoes-container { display: flex; gap: 8px; }
     </style>
 </head>
 <body>
 
 <script>
-    // Proteção de acesso
     if (localStorage.getItem("usuarioLogado") !== "admin") {
         window.location.href = "login.html";
     }
@@ -72,11 +111,11 @@
 </header>
 
 <div class="container">
-    <div class="cards">
-        <div class="card"><h3>Saldo Inicial</h3><p id="saldoInicialDisplay">R$ 0,00</p></div>
-        <div class="card"><h3>Total Reembolsos</h3><p id="totalReembolsos" style="color: var(--danger);">R$ 0,00</p></div>
-        <div class="card"><h3>Total Aportes</h3><p id="totalAportes" style="color: var(--success);">R$ 0,00</p></div>
-        <div class="card"><h3>Saldo em Caixa</h3><p id="saldoAtualDisplay">R$ 0,00</p></div>
+    <div class="cards-resumo">
+        <div class="card-financeiro"><h3>Saldo Inicial</h3><p id="saldoInicialDisplay">R$ 0,00</p></div>
+        <div class="card-financeiro"><h3>Total Reembolsos</h3><p id="totalReembolsos" style="color: var(--danger);">R$ 0,00</p></div>
+        <div class="card-financeiro"><h3>Total Aportes</h3><p id="totalAportes" style="color: var(--success);">R$ 0,00</p></div>
+        <div class="card-financeiro"><h3>Saldo em Caixa</h3><p id="saldoAtualDisplay">R$ 0,00</p></div>
     </div>
 
     <div class="config-caixa">
@@ -88,38 +127,28 @@
         <button class="btn btn-primary" onclick="configurarSaldoInicial()">Definir Saldo</button>
     </div>
 
+    <button class="btn btn-toggle" onclick="toggleHistorico()" id="btnToggle">Ocultar Histórico (Aprovados/Reprovados)</button>
+
     <h2>Reembolsos</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Solicitante</th><th>Empresa</th><th>Valor</th>
-                <th>Status</th><th>Data</th><th>Anexo</th><th>Ações</th>
-            </tr>
-        </thead>
-        <tbody id="tabelaReembolsos"></tbody>
-    </table>
+    <div id="gridReembolsos" class="grid-solicitacoes"></div>
 
     <h2>Aportes</h2>
-    <table>
-        <thead>
-            <tr><th>Solicitante</th><th>Estabelecimento</th><th>Valor</th><th>Status</th><th>Data</th><th>Ações</th></tr>
-        </thead>
-        <tbody id="tabelaAportes"></tbody>
-    </table>
+    <div id="gridAportes" class="grid-solicitacoes"></div>
 
     <h2>Outras Solicitações</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Tipo</th><th>Item/Descrição</th><th>Qtd/Motivo</th>
-                <th>Status</th><th>Data</th><th>Anexo</th><th>Ações</th> 
-            </tr>
-        </thead>
-        <tbody id="tabelaOutros"></tbody>
-    </table>
+    <div id="gridOutros" class="grid-solicitacoes"></div>
 </div>
 
 <script>
+    let mostrarApenasPendentes = false;
+
+    function toggleHistorico() {
+        mostrarApenasPendentes = !mostrarApenasPendentes;
+        const btn = document.getElementById("btnToggle");
+        btn.textContent = mostrarApenasPendentes ? "Mostrar Histórico Completo" : "Ocultar Histórico (Aprovados/Reprovados)";
+        atualizarDashboard();
+    }
+
     function converterParaNumero(valor) {
         if (!valor) return 0;
         if (typeof valor === "number") return valor;
@@ -152,63 +181,54 @@
         let somaReembolsos = 0;
         let somaAportes = 0;
 
-        document.getElementById("tabelaReembolsos").innerHTML = "";
-        document.getElementById("tabelaAportes").innerHTML = "";
-        document.getElementById("tabelaOutros").innerHTML = "";
+        document.getElementById("gridReembolsos").innerHTML = "";
+        document.getElementById("gridAportes").innerHTML = "";
+        document.getElementById("gridOutros").innerHTML = "";
 
         solicitacoes.forEach(s => {
             const valorNum = converterParaNumero(s.valor);
             
-            // Lógica financeira: Apenas pedidos aprovados entram no cálculo do caixa
             if (s.status === "Aprovado") {
                 if (s.tipo === "Reembolso") somaReembolsos += valorNum;
                 if (s.tipo === "Aporte") somaAportes += valorNum;
             }
 
-            // Define se mostra os botões ou o texto do status processado
-            const acoesHtml = s.status === "Pendente" ? `
+            if (mostrarApenasPendentes && s.status !== "Pendente") return;
+
+            const statusClass = `status-${s.status.toLowerCase()}`;
+            const botaoAnexo = `<button class="btn btn-primary" onclick="verDetalhes('${s.id}')">Ver Detalhes</button>`;
+            
+            let acoesHtml = s.status === "Pendente" ? `
                 <div class="acoes-container">
-                    <button class="btn btn-approve" onclick="mudarStatus('${s.id}', 'Aprovado')" title="Aprovar">✓</button>
-                    <button class="btn btn-reject" onclick="mudarStatus('${s.id}', 'Reprovado')" title="Reprovar">✕</button>
+                    <button class="btn btn-approve" onclick="mudarStatus('${s.id}', 'Aprovado')">✓</button>
+                    <button class="btn btn-reject" onclick="mudarStatus('${s.id}', 'Reprovado')">✕</button>
                 </div>
             ` : `<span style="font-size:12px; color:#999; font-style:italic;">Processado</span>`;
 
-            const botaoAnexo = `<button class="btn btn-primary" style="padding:4px 8px" onclick="verDetalhes('${s.id}')">Ver</button>`;
+            // Template do Bloco (Card)
+            let cardHtml = `
+                <div class="block-card">
+                    <span class="status ${statusClass}">${s.status}</span>
+                    <h4>${s.solicitante || s.nome || s.tipo}</h4>
+                    <p><span class="label">Data:</span> ${s.data || "-"}</p>
+                    ${s.empresa ? `<p><span class="label">Local:</span> ${s.empresa}</p>` : ''}
+                    ${s.item || s.descricao ? `<p><span class="label">Descrição:</span> ${s.item || s.descricao}</p>` : ''}
+                    ${s.qtd || s.motivo ? `<p><span class="label">Qtd/Motivo:</span> ${s.qtd || s.motivo}</p>` : ''}
+                    <div class="valor">${s.valor ? formatarMoeda(valorNum) : ''}</div>
+                    
+                    <div class="block-footer">
+                        ${botaoAnexo}
+                        ${acoesHtml}
+                    </div>
+                </div>
+            `;
 
             if (s.tipo === "Reembolso") {
-                document.getElementById("tabelaReembolsos").innerHTML += `
-                    <tr>
-                        <td>${s.solicitante || s.nome}</td>
-                        <td>${s.empresa || "-"}</td>
-                        <td>${formatarMoeda(valorNum)}</td>
-                        <td class="status-${s.status.toLowerCase()}">${s.status}</td>
-                        <td>${s.data || "-"}</td>
-                        <td>${botaoAnexo}</td>
-                        <td>${acoesHtml}</td>
-                    </tr>`;
+                document.getElementById("gridReembolsos").innerHTML += cardHtml;
             } else if (s.tipo === "Aporte") {
-                document.getElementById("tabelaAportes").innerHTML += `
-                    <tr>
-                        <td>${s.solicitante || s.nome}</td>
-                        <td>${s.empresa || "-"}</td>
-                        <td>${formatarMoeda(valorNum)}</td>
-                        <td class="status-${s.status.toLowerCase()}">${s.status}</td>
-                        <td>${s.data || "-"}</td>
-                        <td>${botaoAnexo}</td>
-                        <td>${acoesHtml}</td>
-                    </tr>`;
+                document.getElementById("gridAportes").innerHTML += cardHtml;
             } else {
-                // Tabela para Uniforme e Outros
-                document.getElementById("tabelaOutros").innerHTML += `
-                    <tr>
-                        <td>${s.tipo}</td>
-                        <td>${s.item || s.descricao || "-"}</td>
-                        <td>${s.qtd || s.motivo || "-"}</td>
-                        <td class="status-${s.status.toLowerCase()}">${s.status}</td>
-                        <td>${s.data || "-"}</td>
-                        <td>${botaoAnexo}</td> 
-                        <td>${acoesHtml}</td>
-                    </tr>`;
+                document.getElementById("gridOutros").innerHTML += cardHtml;
             }
         });
 
@@ -221,7 +241,6 @@
 
     function mudarStatus(id, novoStatus) {
         if (!confirm(`Deseja realmente definir como ${novoStatus}?`)) return;
-
         let solicitacoes = JSON.parse(localStorage.getItem("solicitacoes")) || [];
         solicitacoes = solicitacoes.map(s => {
             if (s.id == id) s.status = novoStatus;
@@ -260,26 +279,23 @@
                     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
                     p { margin: 8px 0; font-size: 16px; border-bottom: 1px solid #f9f9f9; padding-bottom: 5px; }
                     .btn-print { background: #004080; color: white; border: none; padding: 15px; border-radius: 6px; cursor: pointer; margin-top: 30px; width: 100%; font-weight: bold; font-size: 18px; transition: 0.3s; }
-                    @media print { .btn-print { display: none; } body { background: white; padding: 0; } .card-detalhe { box-shadow: none; border: none; max-width: 100%; } }
                 </style>
             </head>
             <body>
                 <div class="card-detalhe">
-                    <h2>Detalhes da Solicitação </h2>
+                    <h2>Detalhes da Solicitação</h2>
                     <div class="info-grid">
                         <p><strong>Tipo:</strong> ${s.tipo}</p>
                         <p><strong>Data:</strong> ${s.data || '-'}</p>
                         <p><strong>Solicitante:</strong> ${s.solicitante || s.nome}</p>
-                        <p><strong>Status Atual:</strong> ${s.status}</p>
+                        <p><strong>Status:</strong> ${s.status}</p>
                     </div>
-                    <p><strong>Descrição/Item:</strong> ${s.item || s.descricao || s.motivo || '-'}</p>
+                    <p><strong>Descrição:</strong> ${s.item || s.descricao || s.motivo || '-'}</p>
                     <p><strong>Valor/Qtd:</strong> ${s.valor ? valorFormatado : (s.qtd || '-')}</p>
-                    
                     <div style="margin-top:30px; border-top: 2px dashed #eee; padding-top: 20px;">
-                        <strong>Anexo/Comprovante:</strong><br><br>
+                        <strong>Anexo:</strong><br><br>
                         ${anexoHtml}
                     </div>
-                    
                     <button class="btn-print" onclick="window.print()">Imprimir / Salvar PDF</button>
                 </div>
             </body>
