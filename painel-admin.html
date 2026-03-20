@@ -12,10 +12,42 @@
             --danger: #dc3545;
             --light: #f4f6f9;
             --white: #ffffff;
+            --warning: #ffc107;
         }
 
         body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--light); margin: 0; padding: 0; }
         
+        /* --- ESTILO DO ALERTA DE NOVA SOLICITAÇÃO --- */
+        #alerta-notificacao {
+            position: fixed;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--warning);
+            color: #000;
+            padding: 15px 30px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: bold;
+            transition: top 0.5s ease-in-out;
+        }
+
+        #alerta-notificacao.show { top: 0; }
+
+        .btn-atualizar {
+            background: #000;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
         header { 
             background: var(--primary); 
             color: #fff; 
@@ -37,7 +69,6 @@
 
         .config-caixa { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
         
-        /* Estilização dos Novos Blocos (Cards de Solicitação) */
         .grid-solicitacoes { 
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
@@ -80,7 +111,6 @@
             align-items: center;
         }
 
-        /* Botões */
         .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; font-size: 14px; }
         .btn-approve { background: var(--success); color: white; }
         .btn-reject { background: var(--danger); color: white; }
@@ -98,6 +128,11 @@
     </style>
 </head>
 <body>
+
+<div id="alerta-notificacao">
+    <span>🔔 Nova solicitação recebida!</span>
+    <button class="btn-atualizar" onclick="recarregarPagina()">Atualizar Agora</button>
+</div>
 
 <script>
     if (localStorage.getItem("usuarioLogado") !== "admin") {
@@ -141,6 +176,41 @@
 
 <script>
     let mostrarApenasPendentes = false;
+    let ultimaQuantidade = (JSON.parse(localStorage.getItem("solicitacoes")) || []).length;
+
+    // --- FUNÇÕES DE MONITORAMENTO ---
+
+    function verificarNovasSolicitacoes() {
+        const atual = (JSON.parse(localStorage.getItem("solicitacoes")) || []).length;
+        if (atual > ultimaQuantidade) {
+            exibirAlerta();
+            ultimaQuantidade = atual;
+        }
+    }
+
+    function exibirAlerta() {
+        const alerta = document.getElementById("alerta-notificacao");
+        alerta.classList.add("show");
+        // Tocar um som opcional (descomente se desejar)
+        // new Audio('https://actions.google.com/sounds/v1/notifications/minimal_dot.ogg').play();
+    }
+
+    function recarregarPagina() {
+        document.getElementById("alerta-notificacao").classList.remove("show");
+        atualizarDashboard();
+    }
+
+    // Verifica a cada 5 segundos se houve mudança no Storage
+    setInterval(verificarNovasSolicitacoes, 5000);
+
+    // Também escuta o evento de storage (caso a mudança ocorra em outra aba do mesmo navegador)
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'solicitacoes') {
+            exibirAlerta();
+        }
+    });
+
+    // --- FUNÇÕES ORIGINAIS ---
 
     function toggleHistorico() {
         mostrarApenasPendentes = !mostrarApenasPendentes;
@@ -177,6 +247,7 @@
     function atualizarDashboard() {
         const solicitacoes = JSON.parse(localStorage.getItem("solicitacoes")) || [];
         const saldoInicial = parseFloat(localStorage.getItem("saldoInicial")) || 0;
+        ultimaQuantidade = solicitacoes.length; // Sincroniza a contagem
         
         let somaReembolsos = 0;
         let somaAportes = 0;
@@ -205,7 +276,6 @@
                 </div>
             ` : `<span style="font-size:12px; color:#999; font-style:italic;">Processado</span>`;
 
-            // Template do Bloco (Card)
             let cardHtml = `
                 <div class="block-card">
                     <span class="status ${statusClass}">${s.status}</span>
