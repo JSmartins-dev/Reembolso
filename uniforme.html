@@ -52,6 +52,7 @@
         .btn-save { background: var(--secondary); color: white; }
         .btn-back { background: #e0e0e0; color: #333; }
         .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
 
         .info-text { font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.4; }
     </style>
@@ -67,7 +68,7 @@
         <h2>Solicitação de Uniforme</h2>
         <p class="info-text">Preencha os campos abaixo. Itens com asterisco (*) são obrigatórios.</p>
 
-        <form id="uniformeForm" onsubmit="processarSolicitacao(event, 'Uniforme', this)">
+        <form id="uniformeForm">
             <label>Nome do Solicitante *</label>
             <input type="text" name="nome" placeholder="Seu nome completo" required>
 
@@ -81,67 +82,90 @@
             <textarea name="descricao" placeholder="Ex: Substituição por tempo de uso" required></textarea>
 
             <label>Anexo (Opcional)</label>
-            <input type="file" name="anexo" accept="image/*,.pdf">
+            <input type="file" name="anexo" id="anexoInput" accept="image/*,.pdf">
 
             <div class="actions">
                 <button type="button" class="btn btn-back" onclick="window.location.href='financeiro.html'">Cancelar</button>
-                <button type="submit" class="btn btn-save">Enviar Solicitação</button>
+                <button type="submit" id="btnEnviar" class="btn btn-save">Enviar Solicitação</button>
             </div>
         </form>
     </main>
 
-    <script>
-        function processarSolicitacao(event, tipo, form) {
+    <!-- FIREBASE INTEGRATION -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // --- MESMAS CONFIGURAÇÕES DOS OUTROS FORMULÁRIOS ---
+        const firebaseConfig = {
+            apiKey: "SUA_API_KEY",
+            authDomain: "reembolso-7691c.firebaseapp.com",
+            databaseURL: "https://reembolso-7691c-default-rtdb.firebaseio.com/",
+            projectId: "reembolso-7691c",
+            storageBucket: "reembolso-7691c.appspot.com",
+            messagingSenderId: "ID",
+            appId: "APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const form = document.getElementById('uniformeForm');
+        const btnEnviar = document.getElementById('btnEnviar');
+
+        form.addEventListener('submit', function(event) {
             event.preventDefault();
-            
+            btnEnviar.disabled = true;
+            btnEnviar.innerText = "Enviando...";
+
             const arquivo = form.anexo.files[0];
 
-            // Se houver arquivo, converte para Base64, senão envia com anexo vazio
             if (arquivo) {
+                // Mantendo o limite de segurança para o Realtime Database
+                if (arquivo.size > 1 * 1024 * 1024) { 
+                    alert("O arquivo é muito grande. Para uniformes, anexe apenas fotos leves ou PDFs (Máx 1MB).");
+                    btnEnviar.disabled = false;
+                    btnEnviar.innerText = "Enviar Solicitação";
+                    return;
+                }
+
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const base64 = e.target.result;
-                    montarObjetoESalvar(tipo, form, base64);
+                    enviarAoFirebase(e.target.result);
                 };
                 reader.readAsDataURL(arquivo);
             } else {
-                montarObjetoESalvar(tipo, form, "");
+                enviarAoFirebase("");
             }
-        }
+        });
 
-        function montarObjetoESalvar(tipo, form, anexoData) {
+        function enviarAoFirebase(anexoData) {
+            const novaSolicitacaoRef = push(ref(db, 'solicitacoes'));
+            
             const solicitacao = {
-                id: Date.now(),
-                tipo: tipo,
+                tipo: "Uniforme",
+                solicitante: form.nome.value.trim(),
                 nome: form.nome.value.trim(),
                 item: form.item.value.trim(),
                 qtd: form.qtd.value,
                 descricao: form.descricao.value.trim(),
                 data: new Date().toLocaleDateString('pt-BR'),
                 status: "Pendente",
-                anexo: anexoData
+                anexo: anexoData,
+                timestamp: Date.now()
             };
 
-            salvarNoLocalStorage(solicitacao);
-        }
-
-        function salvarNoLocalStorage(objeto) {
-            try {
-                // Recupera a lista atual ou cria uma nova
-                const lista = JSON.parse(localStorage.getItem("solicitacoes")) || [];
-                
-                // Adiciona a nova solicitação
-                lista.push(objeto);
-                
-                // Salva de volta no LocalStorage
-                localStorage.setItem("solicitacoes", JSON.stringify(lista));
-
-                alert("Solicitação enviada com sucesso!");
-                window.location.href = "financeiro.html"; // Ajuste para sua página de destino
-            } catch (error) {
-                console.error("Erro ao salvar:", error);
-                alert("Erro ao salvar dados. Verifique se o anexo não é muito grande.");
-            }
+            set(novaSolicitacaoRef, solicitacao)
+                .then(() => {
+                    alert("Solicitação de Uniforme enviada com sucesso!");
+                    window.location.href = "financeiro.html";
+                })
+                .catch((error) => {
+                    console.error("Erro:", error);
+                    alert("Erro ao conectar com o banco de dados.");
+                    btnEnviar.disabled = false;
+                    btnEnviar.innerText = "Enviar Solicitação";
+                });
         }
     </script>
 </body>
