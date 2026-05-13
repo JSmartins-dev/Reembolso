@@ -134,7 +134,10 @@
     <button class="btn-atualizar" onclick="recarregarPagina()">Atualizar Agora</button>
 </div>
 
+<audio id="som-notificacao" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+
 <script>
+    // Proteção de Rota
     if (localStorage.getItem("usuarioLogado") !== "admin") {
         window.location.href = "login.html";
     }
@@ -175,42 +178,56 @@
 </div>
 
 <script>
+    // --- VARIÁVEIS DE CONTROLE ---
     let mostrarApenasPendentes = false;
-    let ultimaQuantidade = (JSON.parse(localStorage.getItem("solicitacoes")) || []).length;
+    
+    // Inicializamos a contagem baseada no que já existe no momento do carregamento
+    let dadosIniciais = JSON.parse(localStorage.getItem("solicitacoes")) || [];
+    let ultimaQuantidade = dadosIniciais.length;
 
-    // --- FUNÇÕES DE MONITORAMENTO ---
+    // --- SISTEMA DE NOTIFICAÇÃO COM SOM ---
 
-    function verificarNovasSolicitacoes() {
-        const atual = (JSON.parse(localStorage.getItem("solicitacoes")) || []).length;
-        if (atual > ultimaQuantidade) {
-            exibirAlerta();
-            ultimaQuantidade = atual;
-        }
+    function tocarSom() {
+        const som = document.getElementById("som-notificacao");
+        som.play().catch(error => {
+            console.log("O áudio aguarda uma interação (clique) na página para funcionar.");
+        });
     }
 
-    function exibirAlerta() {
-        const alerta = document.getElementById("alerta-notificacao");
-        alerta.classList.add("show");
-        // Tocar um som opcional (descomente se desejar)
-        // new Audio('https://actions.google.com/sounds/v1/notifications/minimal_dot.ogg').play();
+    function verificarNovasSolicitacoes() {
+        const solicitacoesNoBanco = JSON.parse(localStorage.getItem("solicitacoes")) || [];
+        const quantidadeAtual = solicitacoesNoBanco.length;
+
+        // Se houver MAIS itens do que a última contagem memorizada
+        if (quantidadeAtual > ultimaQuantidade) {
+            document.getElementById("alerta-notificacao").classList.add("show");
+            tocarSom();
+            // Atualiza a referência para não repetir o alerta até que chegue outra
+            ultimaQuantidade = quantidadeAtual; 
+        } 
+        // Se houver menos (ex: admin deletou algo), apenas atualizamos a referência silenciosamente
+        else if (quantidadeAtual < ultimaQuantidade) {
+            ultimaQuantidade = quantidadeAtual;
+        }
     }
 
     function recarregarPagina() {
         document.getElementById("alerta-notificacao").classList.remove("show");
         atualizarDashboard();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // Verifica a cada 5 segundos se houve mudança no Storage
-    setInterval(verificarNovasSolicitacoes, 5000);
+    // Monitoramento por tempo (3 segundos)
+    setInterval(verificarNovasSolicitacoes, 3000);
 
-    // Também escuta o evento de storage (caso a mudança ocorra em outra aba do mesmo navegador)
+    // Monitoramento por evento (dispara instantaneamente se mudar em outra aba)
     window.addEventListener('storage', (e) => {
         if (e.key === 'solicitacoes') {
-            exibirAlerta();
+            verificarNovasSolicitacoes();
         }
     });
 
-    // --- FUNÇÕES ORIGINAIS ---
+    // --- FUNÇÕES DO PAINEL ---
 
     function toggleHistorico() {
         mostrarApenasPendentes = !mostrarApenasPendentes;
@@ -247,7 +264,9 @@
     function atualizarDashboard() {
         const solicitacoes = JSON.parse(localStorage.getItem("solicitacoes")) || [];
         const saldoInicial = parseFloat(localStorage.getItem("saldoInicial")) || 0;
-        ultimaQuantidade = solicitacoes.length; // Sincroniza a contagem
+        
+        // Sincroniza a contagem local para evitar alertas de itens que já estamos vendo
+        ultimaQuantidade = solicitacoes.length; 
         
         let somaReembolsos = 0;
         let somaAportes = 0;
@@ -285,7 +304,6 @@
                     ${s.item || s.descricao ? `<p><span class="label">Descrição:</span> ${s.item || s.descricao}</p>` : ''}
                     ${s.qtd || s.motivo ? `<p><span class="label">Qtd/Motivo:</span> ${s.qtd || s.motivo}</p>` : ''}
                     <div class="valor">${s.valor ? formatarMoeda(valorNum) : ''}</div>
-                    
                     <div class="block-footer">
                         ${botaoAnexo}
                         ${acoesHtml}
@@ -328,13 +346,13 @@
         const valorFormatado = formatarMoeda(converterParaNumero(s.valor));
         const win = window.open("", "_blank");
         
-        let anexoHtml = '<p style="color: gray;"><em>Nenhum anexo enviado ou formato incompatível.</em></p>';
+        let anexoHtml = '<p style="color: gray;"><em>Nenhum anexo enviado.</em></p>';
 
         if (s.anexo && s.anexo.length > 100) {
             if (s.anexo.includes("application/pdf")) {
-                anexoHtml = `<iframe src="${s.anexo}" width="100%" height="600px" style="border:none; border-radius:8px;"></iframe>`;
+                anexoHtml = `<iframe src="${s.anexo}" width="100%" height="600px" style="border:none;"></iframe>`;
             } else {
-                anexoHtml = `<img src="${s.anexo}" style="max-width:100%; border-radius:8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">`;
+                anexoHtml = `<img src="${s.anexo}" style="max-width:100%; border-radius:8px;">`;
             }
         }
 
@@ -343,30 +361,26 @@
             <head>
                 <title>Detalhes #${s.id}</title>
                 <style>
-                    body { font-family: 'Segoe UI', sans-serif; padding: 20px; color: #333; background: #f0f2f5; display: flex; justify-content: center; }
-                    .card-detalhe { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 800px; }
-                    h2 { color: #004080; border-bottom: 2px solid #004080; padding-bottom: 15px; margin-top: 0; }
-                    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-                    p { margin: 8px 0; font-size: 16px; border-bottom: 1px solid #f9f9f9; padding-bottom: 5px; }
-                    .btn-print { background: #004080; color: white; border: none; padding: 15px; border-radius: 6px; cursor: pointer; margin-top: 30px; width: 100%; font-weight: bold; font-size: 18px; transition: 0.3s; }
+                    body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f0f2f5; display: flex; justify-content: center; }
+                    .card-detalhe { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 700px; }
+                    h2 { color: #004080; border-bottom: 2px solid #004080; padding-bottom: 10px; }
+                    p { margin: 10px 0; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
                 </style>
             </head>
             <body>
                 <div class="card-detalhe">
                     <h2>Detalhes da Solicitação</h2>
-                    <div class="info-grid">
-                        <p><strong>Tipo:</strong> ${s.tipo}</p>
-                        <p><strong>Data:</strong> ${s.data || '-'}</p>
-                        <p><strong>Solicitante:</strong> ${s.solicitante || s.nome}</p>
-                        <p><strong>Status:</strong> ${s.status}</p>
-                    </div>
+                    <p><strong>Tipo:</strong> ${s.tipo}</p>
+                    <p><strong>Data:</strong> ${s.data || '-'}</p>
+                    <p><strong>Solicitante:</strong> ${s.solicitante || s.nome}</p>
+                    <p><strong>Status:</strong> ${s.status}</p>
                     <p><strong>Descrição:</strong> ${s.item || s.descricao || s.motivo || '-'}</p>
-                    <p><strong>Valor/Qtd:</strong> ${s.valor ? valorFormatado : (s.qtd || '-')}</p>
-                    <div style="margin-top:30px; border-top: 2px dashed #eee; padding-top: 20px;">
+                    <p><strong>Valor:</strong> ${valorFormatado}</p>
+                    <div style="margin-top:20px;">
                         <strong>Anexo:</strong><br><br>
                         ${anexoHtml}
                     </div>
-                    <button class="btn-print" onclick="window.print()">Imprimir / Salvar PDF</button>
+                    <button style="margin-top:20px; width:100%; padding:15px; background:#004080; color:white; border:none; border-radius:6px; cursor:pointer;" onclick="window.print()">Imprimir</button>
                 </div>
             </body>
             </html>
