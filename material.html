@@ -48,6 +48,7 @@
         .btn-save { background: var(--secondary); color: white; }
         .btn-back { background: #eee; color: #333; }
         .btn:hover { opacity: 0.8; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
 
         .info-text { font-size: 12px; color: #666; margin-bottom: 20px; }
     </style>
@@ -63,7 +64,7 @@
         <h2>Solicitação de Material para Escritório</h2>
         <p class="info-text">Solicite materiais de escritório ou insumos para uso interno na sua unidade.</p>
 
-        <form id="formMaterial" onsubmit="processarSolicitacao(event, 'Material', this)">
+        <form id="formMaterial">
             <label>Nome do Solicitante*</label>
             <input type="text" name="nome" placeholder="Seu nome completo" required>
 
@@ -74,64 +75,90 @@
             <input type="number" name="qtd" placeholder="Ex.: 7" required>
 
             <label>Anexo (Opcional)</label>
-            <input type="file" name="anexo" accept="image/*,.pdf">
+            <input type="file" name="anexo" id="anexoInput" accept="image/*,.pdf">
 
             <div class="actions">
                 <button type="button" class="btn btn-back" onclick="window.location.href='financeiro.html'">Voltar</button>
-                <button type="submit" class="btn btn-save">Enviar Solicitação</button>
+                <button type="submit" id="btnEnviar" class="btn btn-save">Enviar Solicitação</button>
             </div>
         </form>
     </main>
 
-    <script>
-        function processarSolicitacao(event, tipo, form) {
+    <!-- FIREBASE INTEGRATION -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // --- MANTENHA AS MESMAS CREDENCIAIS DOS OUTROS FORMULÁRIOS ---
+        const firebaseConfig = {
+            apiKey: "SUA_API_KEY",
+            authDomain: "reembolso-7691c.firebaseapp.com",
+            databaseURL: "https://reembolso-7691c-default-rtdb.firebaseio.com/",
+            projectId: "reembolso-7691c",
+            storageBucket: "reembolso-7691c.appspot.com",
+            messagingSenderId: "ID",
+            appId: "APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const form = document.getElementById('formMaterial');
+        const btnEnviar = document.getElementById('btnEnviar');
+
+        form.addEventListener('submit', function(event) {
             event.preventDefault();
-            
+            btnEnviar.disabled = true;
+            btnEnviar.innerText = "Enviando...";
+
             const arquivo = form.anexo.files[0];
 
             if (arquivo) {
+                // Limite de 1MB para estabilidade do banco de dados
+                if (arquivo.size > 1 * 1024 * 1024) { 
+                    alert("O arquivo é muito grande. O limite máximo é de 1MB.");
+                    btnEnviar.disabled = false;
+                    btnEnviar.innerText = "Enviar Solicitação";
+                    return;
+                }
+
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const base64 = e.target.result;
-                    montarObjetoESalvar(tipo, form, base64);
+                    enviarAoFirebase(e.target.result);
                 };
                 reader.readAsDataURL(arquivo);
             } else {
-                montarObjetoESalvar(tipo, form, "");
+                enviarAoFirebase("");
             }
-        }
+        });
 
-        function montarObjetoESalvar(tipo, form, anexoData) {
-            try {
-                const solicitacao = {
-                    id: Date.now(),
-                    tipo: tipo,
-                    nome: form.nome.value.trim(),
-                    item: form.item.value.trim(),
-                    qtd: form.qtd.value,
-                    // Mapeamos 'item' para 'descricao' para manter compatibilidade com o Painel Admin
-                    descricao: form.item.value.trim(), 
-                    data: new Date().toLocaleDateString('pt-BR'),
-                    status: "Pendente",
-                    anexo: anexoData
-                };
+        function enviarAoFirebase(anexoData) {
+            const novaSolicitacaoRef = push(ref(db, 'solicitacoes'));
+            
+            const solicitacao = {
+                tipo: "Material",
+                solicitante: form.nome.value.trim(),
+                item: form.item.value.trim(),
+                qtd: form.qtd.value,
+                // Mantemos 'descricao' para compatibilidade total com o seu Painel Admin
+                descricao: form.item.value.trim(), 
+                data: new Date().toLocaleDateString('pt-BR'),
+                status: "Pendente",
+                anexo: anexoData,
+                timestamp: Date.now()
+            };
 
-                // Recupera a lista atual ou cria uma nova
-                const lista = JSON.parse(localStorage.getItem("solicitacoes")) || [];
-                
-                // Adiciona a nova e salva
-                lista.push(solicitacao);
-                localStorage.setItem("solicitacoes", JSON.stringify(lista));
-
-                alert("Solicitação de material registrada com sucesso!");
-                
-                // Redireciona para a página da lista ou dashboard
-                window.location.href = "financeiro.html";
-                
-            } catch (error) {
-                console.error("Erro ao salvar:", error);
-                alert("Erro ao salvar os dados. Verifique se o arquivo não é muito grande.");
-            }
+            set(novaSolicitacaoRef, solicitacao)
+                .then(() => {
+                    alert("Solicitação de material registrada com sucesso!");
+                    window.location.href = "financeiro.html";
+                })
+                .catch((error) => {
+                    console.error("Erro:", error);
+                    alert("Erro ao enviar para o banco de dados.");
+                    btnEnviar.disabled = false;
+                    btnEnviar.innerText = "Enviar Solicitação";
+                });
         }
     </script>
 </body>
