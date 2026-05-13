@@ -11,89 +11,44 @@
             --light: #f4f6f9;
         }
 
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: var(--light);
-            margin: 0;
-            padding: 0;
-        }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--light); margin: 0; padding: 0; }
         
-        header {
-            background: var(--primary);
-            color: #fff;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
+        header { 
+            background: var(--primary); 
+            color: #fff; 
+            padding: 15px 30px; 
+            display: flex; 
+            justify-content: space-between; 
             align-items: center;
         }
 
-        header a {
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
+        header a { color: white; text-decoration: none; font-weight: bold; font-size: 1.2rem; }
 
-        main {
-            max-width: 600px;
-            margin: 30px auto;
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
+        main { max-width: 600px; margin: 30px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
-        h2 {
-            color: var(--primary);
-            margin-top: 0;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
-        }
+        h2 { color: var(--primary); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
 
-        label {
-            display: block;
-            margin-top: 15px;
-            font-weight: bold;
-            color: #333;
-            font-size: 14px;
-        }
+        label { display: block; margin-top: 15px; font-weight: bold; color: #333; font-size: 14px; }
 
-        input, select, textarea {
-            width: 100%;
-            padding: 12px;
-            margin-top: 5px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
+        input, select, textarea { 
+            width: 100%; 
+            padding: 12px; 
+            margin-top: 5px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            box-sizing: border-box; 
             font-size: 16px;
         }
 
-        .actions {
-            margin-top: 25px;
-            display: flex;
-            gap: 10px;
-        }
+        .actions { margin-top: 25px; display: flex; gap: 10px; }
 
-        .btn {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
-            font-size: 16px;
-        }
-
+        .btn { flex: 1; padding: 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 16px; }
         .btn-save { background: var(--secondary); color: white; }
         .btn-back { background: #eee; color: #333; }
         .btn:hover { opacity: 0.8; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
 
-        .info-text {
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 20px;
-        }
+        .info-text { font-size: 12px; color: #666; margin-bottom: 20px; }
     </style>
 </head>
 <body>
@@ -107,7 +62,7 @@
         <h2>Novo Aporte</h2>
         <p class="info-text">Preencha os dados abaixo para solicitar a entrada de valores no caixa.</p>
 
-        <form id="formAporte" onsubmit="prepararEnvio(event)">
+        <form id="formAporte">
             <label for="nome">Nome do Solicitante *</label>
             <input type="text" id="nome" name="nome" placeholder="Seu nome completo" required>
 
@@ -124,19 +79,36 @@
             <input type="text" id="valorInput" name="valor" placeholder="0,00" required>
 
             <label>Motivo *</label>
-            <textarea name="descricao" id="descricao" placeholder="Descreva brevemente o motivo do aporte" required></textarea>
+            <textarea name="descricao" id="descricao" placeholder="Descreva brevemente o motivo do aporte" style="height: 80px; resize: vertical;" required></textarea>
 
             <label for="anexo">Anexo *</label>
-            <input type="file" id="anexo" name="anexo" accept="image/*,.pdf">
+            <input type="file" id="anexo" name="anexo" accept="image/*,.pdf" required>
 
             <div class="actions">
                 <button type="button" class="btn btn-back" onclick="window.location.href='financeiro.html'">Voltar</button>
-                <button type="submit" class="btn btn-save">Solicitar Aporte</button>
+                <button type="submit" id="btnEnviar" class="btn btn-save">Solicitar Aporte</button>
             </div>
         </form>
     </main>
 
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // --- SUBSTITUA PELAS SUAS CHAVES REAIS DO FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "SUA_API_KEY",
+            authDomain: "SEU_PROJETO.firebaseapp.com",
+            databaseURL: "https://reembolso-7691c-default-rtdb.firebaseio.com/",
+            projectId: "reembolso-7691c",
+            storageBucket: "reembolso-7691c.appspot.com",
+            messagingSenderId: "SEU_ID",
+            appId: "SEU_APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
         // Máscara de Moeda
         const valorInput = document.getElementById('valorInput');
         valorInput.addEventListener('input', function(e) {
@@ -145,58 +117,61 @@
             e.target.value = value;
         });
 
-        // Função principal de envio
-        function prepararEnvio(event) {
+        const form = document.getElementById('formAporte');
+        const btnEnviar = document.getElementById('btnEnviar');
+
+        form.addEventListener('submit', function(event) {
             event.preventDefault();
-            const form = event.target;
+            btnEnviar.disabled = true;
+            btnEnviar.innerText = "Enviando...";
+
             const arquivo = form.anexo.files[0];
 
             if (arquivo) {
-                // Limite de 2MB para evitar travar o LocalStorage
                 if (arquivo.size > 2 * 1024 * 1024) {
                     alert("Arquivo muito grande! O limite é de 2MB.");
+                    btnEnviar.disabled = false;
+                    btnEnviar.innerText = "Solicitar Aporte";
                     return;
                 }
 
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    processarGravacao(form, e.target.result);
+                    enviarAoFirebase(e.target.result);
                 };
                 reader.readAsDataURL(arquivo);
             } else {
-                processarGravacao(form, null);
+                enviarAoFirebase(null);
             }
-        }
+        });
 
-        function processarGravacao(form, anexoBase64) {
-            try {
-                // Limpa o valor para formato numérico (ex: 1.500,00 -> 1500.00)
-                const valorLimpo = form.valor.value.replace(/\./g, '').replace(',', '.');
+        function enviarAoFirebase(anexoBase64) {
+            // Cria uma nova referência na pasta 'solicitacoes'
+            const novaSolicitacaoRef = push(ref(db, 'solicitacoes'));
+            
+            const dados = {
+                tipo: "Aporte",
+                solicitante: form.nome.value.trim(),
+                empresa: form.empresa.value,
+                valor: form.valor.value,
+                descricao: form.descricao.value.trim(),
+                data: new Date().toLocaleDateString('pt-BR'),
+                status: "Pendente",
+                anexo: anexoBase64,
+                timestamp: Date.now()
+            };
 
-                const novaSolicitacao = {
-                    id: Date.now(),
-                    tipo: "Aporte",
-                    nome: form.nome.value.trim(),
-                    empresa: form.empresa.value,
-                    valor: form.valor.value,
-                    descricao: form.descricao.value.trim(),
-                    data: new Date().toLocaleDateString('pt-BR'),
-                    status: "Pendente",
-                    anexo: anexoBase64
-                };
-
-                // Salva no LocalStorage
-                let lista = JSON.parse(localStorage.getItem("solicitacoes")) || [];
-                lista.push(novaSolicitacao);
-                localStorage.setItem("solicitacoes", JSON.stringify(lista));
-
-                alert("Solicitação de aporte enviada com sucesso!");
-                window.location.href = "minhas-solicitacoes.html";
-
-            } catch (error) {
-                console.error("Erro ao salvar:", error);
-                alert("Erro ao salvar. Verifique o tamanho do anexo ou tente outro navegador.");
-            }
+            set(novaSolicitacaoRef, dados)
+                .then(() => {
+                    alert("Solicitação de aporte enviada com sucesso!");
+                    window.location.href = "minhas-solicitacoes.html";
+                })
+                .catch((error) => {
+                    console.error("Erro no Firebase:", error);
+                    alert("Erro ao salvar no banco de dados. Verifique suas regras de segurança.");
+                    btnEnviar.disabled = false;
+                    btnEnviar.innerText = "Solicitar Aporte";
+                });
         }
     </script>
 </body>
