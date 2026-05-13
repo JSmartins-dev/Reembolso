@@ -85,24 +85,50 @@
             <tbody id="listaSolicitacoes"></tbody>
         </table>
 
-        <!-- Botão de apagar histórico -->
-        <button class="btn btn-danger" onclick="limparHistoricoIndividual()">Apagar Histórico</button>
+        <button class="btn btn-danger" onclick="limparHistoricoFirebase()">Apagar Histórico</button>
     </div>
 </main>
 
-<script>
-    // 1. Identificação do Usuário (Sincronizado com o sistema)
-    const usuarioAtual = (localStorage.getItem("usuarioLogado") || "visitante").trim().toLowerCase();
+<!-- SDK FIREBASE -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    function carregarSolicitacoes() {
-        const listaGeral = JSON.parse(localStorage.getItem("solicitacoes")) || [];
+    // --- CONFIGURAÇÃO DO SEU FIREBASE (SUBSTITUA PELOS SEUS DADOS) ---
+    const firebaseConfig = {
+        apiKey: "SUA_API_KEY",
+        authDomain: "SEU_PROJETO.firebaseapp.com",
+        databaseURL: "https://reembolso-7691c-default-rtdb.firebaseio.com/",
+        projectId: "SEU_PROJETO",
+        storageBucket: "SEU_PROJETO.appspot.com",
+        messagingSenderId: "ID",
+        appId: "APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Identificação do Usuário
+    const usuarioAtual = (localStorage.getItem("usuarioLogado") || "visitante").trim().toLowerCase();
+    document.getElementById("infoUsuario").innerText = "Usuário: " + usuarioAtual;
+
+    // Referência global das solicitações filtradas para deleção
+    let solicitacoesExibidasIds = [];
+
+    // --- ESCUTAR DADOS EM TEMPO REAL ---
+    onValue(ref(db, 'solicitacoes'), (snapshot) => {
+        const data = snapshot.val();
+        const listaGeral = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+        renderizarTabela(listaGeral);
+    });
+
+    function renderizarTabela(listaGeral) {
         const tbody = document.getElementById("listaSolicitacoes");
         const msgFiltro = document.getElementById("msgFiltro");
-        document.getElementById("infoUsuario").innerText = "Usuário: " + usuarioAtual;
-        
         tbody.innerHTML = "";
+        solicitacoesExibidasIds = [];
 
-        // 2. Filtro de Visualização: Admin vê tudo, Usuário vê o dele
+        // Filtro: Admin vê tudo, Usuário vê o dele
         const minhasSolicitacoes = listaGeral.filter(s => {
             if (usuarioAtual === "admin") return true;
 
@@ -122,10 +148,19 @@
             return;
         }
 
-        // 3. Renderização
         minhasSolicitacoes.forEach(s => {
+            solicitacoesExibidasIds.push(s.id);
             const tr = document.createElement("tr");
-            const descricao = s.valor ? `R$ ${s.valor}` : (s.descricao || s.item || "-");
+            
+            // Tratamento de valores e descrições
+            let descricao = "-";
+            if (s.valor) {
+                const valorNum = parseFloat(s.valor.toString().replace(/\./g, "").replace(",", "."));
+                descricao = valorNum.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            } else {
+                descricao = s.descricao || s.item || "-";
+            }
+
             const statusTxt = s.status || "Pendente";
             const statusClass = "status-" + statusTxt.toLowerCase();
 
@@ -139,33 +174,31 @@
         });
     }
 
-    // 4. Lógica de Limpeza Diferenciada
-    function limparHistoricoIndividual() {
+    // --- FUNÇÃO DE LIMPEZA NO FIREBASE ---
+    window.limparHistoricoFirebase = async function() {
         const mensagem = usuarioAtual === "admin" 
-            ? "ADMIN: Deseja apagar TODO o banco de dados?" 
-            : `Deseja apagar DEFINITIVAMENTE seu histórico, ${usuarioAtual}?`;
+            ? "ADMIN: Deseja apagar TODO o banco de dados do Firebase?" 
+            : `Deseja apagar DEFINITIVAMENTE seu histórico no servidor, ${usuarioAtual}?`;
 
         if (confirm(mensagem)) {
-            let listaGeral = JSON.parse(localStorage.getItem("solicitacoes")) || [];
-            let novaLista;
-
-            if (usuarioAtual === "admin") {
-                novaLista = []; // Admin limpa tudo
-            } else {
-                novaLista = listaGeral.filter(s => {
-                    const n1 = (s.solicitante || "").toLowerCase().trim();
-                    const n2 = (s.nome || "").toLowerCase().trim();
-                    return n1 !== usuarioAtual && n2 !== usuarioAtual;
-                });
+            try {
+                if (usuarioAtual === "admin") {
+                    // Remove o nó inteiro de solicitações
+                    await remove(ref(db, 'solicitacoes'));
+                } else {
+                    // Remove apenas os itens que pertencem ao usuário atual
+                    for (let id of solicitacoesExibidasIds) {
+                        await remove(ref(db, `solicitacoes/${id}`));
+                    }
+                }
+                alert("Histórico removido com sucesso!");
+            } catch (error) {
+                console.error("Erro ao deletar:", error);
+                alert("Erro ao apagar dados.");
             }
-
-            localStorage.setItem("solicitacoes", JSON.stringify(novaLista));
-            alert("Histórico apagado com sucesso!");
-            carregarSolicitacoes();
         }
-    }
-
-    window.onload = carregarSolicitacoes;
+    };
 </script>
+
 </body>
 </html>
