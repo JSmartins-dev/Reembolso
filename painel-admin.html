@@ -3,64 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Admin - Financeiro (Nuvem)</title>
+    <title>Painel Admin - Financeiro (Firebase)</title>
     <style>
         :root {
-            --primary: #004080; --secondary: #0066cc; --success: #28a745;
-            --danger: #dc3545; --light: #f4f6f9; --white: #ffffff; --warning: #ffc107;
+            --primary: #004080;
+            --secondary: #0066cc;
+            --success: #28a745;
+            --danger: #dc3545;
+            --light: #f4f6f9;
+            --white: #ffffff;
+            --warning: #ffc107;
         }
 
         body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--light); margin: 0; padding: 0; }
         
-        /* Alerta de Nuvem */
         #alerta-notificacao {
-            position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
-            background: var(--warning); color: #000; padding: 15px 30px;
-            border-radius: 0 0 10px 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            z-index: 9999; display: flex; align-items: center; gap: 15px;
-            font-weight: bold; transition: top 0.5s ease-in-out;
+            position: fixed;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--warning);
+            color: #000;
+            padding: 15px 30px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: bold;
+            transition: top 0.5s ease-in-out;
         }
+
         #alerta-notificacao.show { top: 0; }
 
-        header { background: var(--primary); color: #fff; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .btn-atualizar {
+            background: #000;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        header {
+            background: var(--primary);
+            color: #fff;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
         .container { padding: 20px; max-width: 1200px; margin: auto; }
-        
-        /* Cards de Resumo */
+        h2 { color: var(--primary); border-left: 5px solid var(--secondary); padding-left: 10px; margin-top: 30px; margin-bottom: 15px; }
+
         .cards-resumo { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
         .card-financeiro { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center; }
-        .card-financeiro h3 { margin: 0; font-size: 13px; color: #666; text-transform: uppercase; }
-        .card-financeiro p { font-size: 22px; font-weight: bold; margin: 5px 0 0 0; color: var(--secondary); }
+        .card-financeiro h3 { margin: 0 0 10px 0; font-size: 13px; color: #666; text-transform: uppercase; }
+        .card-financeiro p { font-size: 22px; font-weight: bold; margin: 0; color: var(--secondary); }
 
-        /* Estilo da Tabela (Original) */
-        .table-container { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; margin-bottom: 30px; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #f8f9fa; color: #333; padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; }
-        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
-        tr:hover { background-color: #f1f1f1; }
+        .config-caixa { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        
+        .grid-solicitacoes {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
 
-        .status { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .block-card {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            border-top: 4px solid var(--secondary);
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        .block-card:hover { transform: translateY(-3px); }
+        .block-card h4 { margin: 0 0 10px 0; color: var(--primary); font-size: 18px; display: flex; justify-content: space-between; }
+        .block-card p { margin: 5px 0; font-size: 14px; color: #444; }
+        .block-card .label { font-weight: bold; color: #777; }
+        .block-card .valor { font-size: 18px; font-weight: bold; color: var(--primary); margin: 10px 0; }
+        
+        .block-card .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .block-footer {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; font-size: 14px; }
+        .btn-approve { background: var(--success); color: white; }
+        .btn-reject { background: var(--danger); color: white; }
+        .btn-primary { background: var(--secondary); color: white; }
+        .btn-logout { background: transparent; border: 1px solid white; color: white; }
+        .btn-toggle { background: #6c757d; color: white; margin-bottom: 20px; width: 100%; }
+        
         .status-pendente { background: #fff3cd; color: #856404; }
         .status-aprovado { background: #d4edda; color: #155724; }
         .status-reprovado { background: #f8d7da; color: #721c24; }
-
-        .btn { padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-approve { background: var(--success); color: white; margin-right: 5px; }
-        .btn-reject { background: var(--danger); color: white; }
-        .btn-atualizar { background: #000; color: #fff; font-size: 12px; }
+        
+        input { padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 200px; font-size: 16px; }
+        .logo { color: white; text-decoration: none; font-size: 20px; font-weight: bold; }
+        .acoes-container { display: flex; gap: 8px; }
     </style>
 </head>
 <body>
 
 <div id="alerta-notificacao">
-    <span>🔔 Nova solicitação recebida (Nuvem)</span>
-    <button class="btn btn-atualizar" onclick="fecharAlerta()">OK</button>
+    <span>🔔 Nova solicitação recebida!</span>
+    <button class="btn-atualizar" onclick="fecharAlerta()">Entendido</button>
 </div>
 
 <audio id="som-notificacao" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
 <header>
-    <div style="font-size: 20px; font-weight: bold;">Painel Administrativo Maestro</div>
-    <button class="btn" style="background: rgba(255,255,255,0.2); color: white;" onclick="logout()">Sair</button>
+    <a href="#" class="logo">Painel Administrativo (Firebase)</a>
+    <button class="btn btn-logout" onclick="logout()">Sair</button>
 </header>
 
 <div class="container">
@@ -71,48 +146,33 @@
         <div class="card-financeiro"><h3>Saldo em Caixa</h3><p id="saldoAtualDisplay">R$ 0,00</p></div>
     </div>
 
-    <button class="btn" id="btnToggle" style="background: #6c757d; color: white; width: 100%; margin-bottom: 20px;" onclick="toggleHistorico()">Ocultar Histórico</button>
-
-    <h2 style="color: var(--primary);">Solicitações de Reembolso</h2>
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Data</th>
-                    <th>Solicitante</th>
-                    <th>Descrição</th>
-                    <th>Valor</th>
-                    <th>Status</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody id="tabelaReembolsos"></tbody>
-        </table>
+    <div class="config-caixa">
+        <div>
+            <strong>Ajustar Saldo Inicial:</strong><br>
+            <small>Define o valor de abertura do caixa</small>
+        </div>
+        <input type="text" id="valorCaixa" placeholder="Ex: 15000,00">
+        <button class="btn btn-primary" onclick="configurarSaldoInicial()">Definir Saldo</button>
     </div>
 
-    <h2 style="color: var(--primary);">Solicitações de Aporte</h2>
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Data</th>
-                    <th>Nome</th>
-                    <th>Descrição</th>
-                    <th>Valor</th>
-                    <th>Status</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody id="tabelaAportes"></tbody>
-        </table>
-    </div>
+    <button class="btn btn-toggle" onclick="toggleHistorico()" id="btnToggle">Ocultar Histórico (Aprovados/Reprovados)</button>
+
+    <h2>Reembolsos</h2>
+    <div id="gridReembolsos" class="grid-solicitacoes"></div>
+
+    <h2>Aportes</h2>
+    <div id="gridAportes" class="grid-solicitacoes"></div>
+
+    <h2>Outras Solicitações</h2>
+    <div id="gridOutros" class="grid-solicitacoes"></div>
 </div>
 
+<!-- SDK FIREBASE -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, onValue, update, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // MANTENHA SUAS CREDENCIAIS AQUI
+    // 1. COLE SUAS CONFIGURAÇÕES DO FIREBASE AQUI
     const firebaseConfig = {
         apiKey: "SUA_API_KEY",
         authDomain: "SEU_PROJETO.firebaseapp.com",
@@ -120,98 +180,173 @@
         projectId: "SEU_PROJETO",
         storageBucket: "SEU_PROJETO.appspot.com",
         messagingSenderId: "ID",
-        appId: "ID_APP"
+        appId: "APP_ID"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const solicitacoesRef = ref(db, 'solicitacoes');
 
-    let listaSolicitacoes = [];
+    // Variáveis Globais
+    let solicitacoesGlobais = [];
     let mostrarApenasPendentes = false;
     let primeiraCarga = true;
 
-    // Escuta o banco de dados em tempo real
-    onValue(solicitacoesRef, (snapshot) => {
-        const dados = snapshot.val();
-        listaSolicitacoes = dados ? Object.keys(dados).map(key => ({ id: key, ...dados[key] })) : [];
+    // --- FUNÇÕES CORE ---
+
+    // Ouvir dados do Firebase em Tempo Real
+    onValue(ref(db, 'solicitacoes'), (snapshot) => {
+        const data = snapshot.val();
+        const lista = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
         
-        if (!primeiraCarga) {
-            document.getElementById("alerta-notificacao").classList.add("show");
-            document.getElementById("som-notificacao").play();
+        // Notificação se chegar algo novo (e não for a primeira vez que abre a página)
+        if (!primeiraCarga && lista.length > solicitacoesGlobais.length) {
+            exibirAlerta();
         }
-        
+
+        solicitacoesGlobais = lista;
         primeiraCarga = false;
-        renderizarTabela();
+        atualizarDashboard();
     });
 
-    function renderizarTabela() {
-        const corpoR = document.getElementById("tabelaReembolsos");
-        const corpoA = document.getElementById("tabelaAportes");
-        corpoR.innerHTML = ""; corpoA.innerHTML = "";
+    // Ouvir Saldo Inicial
+    onValue(ref(db, 'configuracoes/saldoInicial'), (snapshot) => {
+        const saldo = snapshot.val() || 0;
+        localStorage.setItem("saldoInicial", saldo);
+        atualizarDashboard();
+    });
 
-        let somaR = 0; let somaA = 0;
+    function atualizarDashboard() {
+        const saldoInicial = parseFloat(localStorage.getItem("saldoInicial")) || 0;
+        let somaReembolsos = 0;
+        let somaAportes = 0;
 
-        listaSolicitacoes.forEach(s => {
-            const valorNum = parseFloat(s.valor.toString().replace(',','.')) || 0;
+        const grids = {
+            Reembolso: document.getElementById("gridReembolsos"),
+            Aporte: document.getElementById("gridAportes"),
+            Outros: document.getElementById("gridOutros")
+        };
+
+        // Limpar grids
+        Object.values(grids).forEach(g => g.innerHTML = "");
+
+        solicitacoesGlobais.forEach(s => {
+            const valorNum = converterParaNumero(s.valor);
             
             if (s.status === "Aprovado") {
-                if (s.tipo === "Reembolso") somaR += valorNum;
-                if (s.tipo === "Aporte") somaA += valorNum;
+                if (s.tipo === "Reembolso") somaReembolsos += valorNum;
+                if (s.tipo === "Aporte") somaAportes += valorNum;
             }
 
             if (mostrarApenasPendentes && s.status !== "Pendente") return;
 
-            const tr = `
-                <tr>
-                    <td>${s.data || '-'}</td>
-                    <td>${s.solicitante || s.nome}</td>
-                    <td>${s.item || s.descricao || '-'}</td>
-                    <td><strong>R$ ${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></td>
-                    <td><span class="status status-${s.status.toLowerCase()}">${s.status}</span></td>
-                    <td>
-                        ${s.status === 'Pendente' ? `
-                            <button class="btn btn-approve" onclick="window.atualizarStatus('${s.id}', 'Aprovado')">Aprovar</button>
-                            <button class="btn btn-reject" onclick="window.atualizarStatus('${s.id}', 'Reprovado')">Recusar</button>
-                        ` : '-'}
-                    </td>
-                </tr>
-            `;
-
-            if (s.tipo === "Reembolso") corpoR.innerHTML += tr;
-            else corpoA.innerHTML += tr;
+            const card = criarCardHtml(s, valorNum);
+            const gridDestino = grids[s.tipo] || grids.Outros;
+            gridDestino.innerHTML += card;
         });
 
-        // Atualiza os Cards Superiores
-        const saldoIni = parseFloat(localStorage.getItem("saldoInicial")) || 0;
-        document.getElementById("saldoInicialDisplay").innerText = "R$ " + saldoIni.toLocaleString('pt-BR');
-        document.getElementById("totalReembolsos").innerText = "- R$ " + somaR.toLocaleString('pt-BR');
-        document.getElementById("totalAportes").innerText = "+ R$ " + somaA.toLocaleString('pt-BR');
-        document.getElementById("saldoAtualDisplay").innerText = "R$ " + (saldoIni + somaA - somaR).toLocaleString('pt-BR');
+        const saldoFinal = saldoInicial + somaAportes - somaReembolsos;
+        document.getElementById("saldoInicialDisplay").textContent = formatarMoeda(saldoInicial);
+        document.getElementById("totalReembolsos").textContent = `- ${formatarMoeda(somaReembolsos)}`;
+        document.getElementById("totalAportes").textContent = `+ ${formatarMoeda(somaAportes)}`;
+        document.getElementById("saldoAtualDisplay").textContent = formatarMoeda(saldoFinal);
     }
 
-    // Funções de Ação
-    window.atualizarStatus = (id, novoStatus) => {
-        if(confirm(`Deseja alterar o status para ${novoStatus}?`)) {
-            update(ref(db, 'solicitacoes/' + id), { status: novoStatus });
-        }
+    // Expor funções para o HTML (devido ao type="module")
+    window.mudarStatus = function(id, novoStatus) {
+        if (!confirm(`Deseja definir como ${novoStatus}?`)) return;
+        update(ref(db, `solicitacoes/${id}`), { status: novoStatus });
     };
 
-    window.toggleHistorico = () => {
+    window.configurarSaldoInicial = function() {
+        let input = document.getElementById("valorCaixa").value;
+        let valor = converterParaNumero(input);
+        if (isNaN(valor)) return alert("Valor inválido");
+        set(ref(db, 'configuracoes/saldoInicial'), valor);
+        document.getElementById("valorCaixa").value = "";
+    };
+
+    window.toggleHistorico = function() {
         mostrarApenasPendentes = !mostrarApenasPendentes;
-        document.getElementById("btnToggle").innerText = mostrarApenasPendentes ? "Mostrar Histórico" : "Ocultar Histórico";
-        renderizarTabela();
+        document.getElementById("btnToggle").textContent = mostrarApenasPendentes ? 
+            "Mostrar Histórico Completo" : "Ocultar Histórico (Aprovados/Reprovados)";
+        atualizarDashboard();
     };
 
-    window.fecharAlerta = () => {
+    window.verDetalhes = function(id) {
+        const s = solicitacoesGlobais.find(x => x.id == id);
+        if (!s) return;
+        abrirJanelaDetalhes(s);
+    };
+
+    function criarCardHtml(s, valorNum) {
+        const statusClass = `status-${s.status.toLowerCase()}`;
+        const acoesHtml = s.status === "Pendente" ? `
+            <div class="acoes-container">
+                <button class="btn btn-approve" onclick="mudarStatus('${s.id}', 'Aprovado')">✓</button>
+                <button class="btn btn-reject" onclick="mudarStatus('${s.id}', 'Reprovado')">✕</button>
+            </div>
+        ` : `<span style="font-size:12px; color:#999; font-style:italic;">Processado</span>`;
+
+        return `
+            <div class="block-card">
+                <span class="status ${statusClass}">${s.status}</span>
+                <h4>${s.solicitante || s.nome || 'Sem Nome'}</h4>
+                <p><span class="label">Data:</span> ${s.data || "-"}</p>
+                ${s.empresa ? `<p><span class="label">Local:</span> ${s.empresa}</p>` : ''}
+                ${s.item || s.descricao ? `<p><span class="label">Descrição:</span> ${s.item || s.descricao}</p>` : ''}
+                <div class="valor">${formatarMoeda(valorNum)}</div>
+                <div class="block-footer">
+                    <button class="btn btn-primary" onclick="verDetalhes('${s.id}')">Ver Detalhes</button>
+                    ${acoesHtml}
+                </div>
+            </div>`;
+    }
+
+    // Helpers
+    function converterParaNumero(valor) {
+        if (!valor) return 0;
+        if (typeof valor === "number") return valor;
+        return parseFloat(valor.toString().replace(/\./g, "").replace(",", ".")) || 0;
+    }
+
+    function formatarMoeda(valor) {
+        return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    }
+
+    function exibirAlerta() {
+        document.getElementById("alerta-notificacao").classList.add("show");
+        const som = document.getElementById("som-notificacao");
+        som.play().catch(() => console.log("Áudio bloqueado pelo navegador."));
+    }
+
+    window.fecharAlerta = function() {
         document.getElementById("alerta-notificacao").classList.remove("show");
-    };
+    }
 
-    window.logout = () => {
+    window.logout = function() {
         localStorage.removeItem("usuarioLogado");
         window.location.href = "login.html";
-    };
+    }
+
+    function abrirJanelaDetalhes(s) {
+        const win = window.open("", "_blank");
+        const valorFormatado = formatarMoeda(converterParaNumero(s.valor));
+        let anexoHtml = s.anexo && s.anexo.length > 100 ? 
+            (s.anexo.includes("pdf") ? `<iframe src="${s.anexo}" width="100%" height="500px"></iframe>` : `<img src="${s.anexo}" style="max-width:100%">`) 
+            : '<p>Sem anexo</p>';
+
+        win.document.write(`<html><head><title>Detalhes</title><style>body{font-family:sans-serif;padding:20px;background:#f4f4f4}.card{background:#fff;padding:20px;border-radius:10px;max-width:600px;margin:auto;box-shadow:0 2px 10px rgba(0,0,0,0.1)}</style></head>
+        <body><div class="card"><h2>Solicitação #${s.id}</h2><p><strong>Solicitante:</strong> ${s.solicitante || s.nome}</p><p><strong>Valor:</strong> ${valorFormatado}</p><p><strong>Motivo:</strong> ${s.motivo || s.item || '-'}</p><hr>${anexoHtml}</div></body></html>`);
+    }
 
 </script>
+
+<script>
+    // Proteção de Rota simples
+    if (localStorage.getItem("usuarioLogado") !== "admin") {
+        window.location.href = "login.html";
+    }
+</script>
+
 </body>
 </html>
