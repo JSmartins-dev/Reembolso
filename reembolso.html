@@ -48,6 +48,7 @@
         .btn-save { background: var(--secondary); color: white; }
         .btn-back { background: #eee; color: #333; }
         .btn:hover { opacity: 0.8; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
 
         .info-text { font-size: 12px; color: #666; margin-bottom: 20px; }
     </style>
@@ -63,7 +64,8 @@
         <h2>Novo Reembolso</h2>
         <p class="info-text">Preencha os dados e anexe o comprovante (campos com * são obrigatórios).</p>
 
-        <form onsubmit="salvarSolicitacao(event, 'Reembolso', this)">
+        <!-- Removi o onsubmit do HTML para tratar via JavaScript Module -->
+        <form id="formReembolso">
             <label>Nome do Solicitante *</label>
             <input type="text" name="nome" placeholder="Ex.: Jeniffer Martins" required>
 
@@ -87,21 +89,39 @@
             <label>Justificativa/Descrição *</label>
             <textarea name="descricao" placeholder="Descreva brevemente o motivo da despesa..." required></textarea>
 
-            <label>Pagamento em espécie (opicional)</label>
-            <input type="text" name="banco" placeholder=>
+            <label>Pagamento em espécie (opcional)</label>
+            <input type="text" name="banco" placeholder="Dados bancários ou observação">
 
             <label>Anexo (Imagem ou PDF) *</label>
             <input type="file" name="anexo" id="anexoInput" accept="image/*,application/pdf" required>
 
             <div class="actions">
                 <button type="button" class="btn btn-back" onclick="window.location.href='financeiro.html'">Cancelar</button>
-                <button type="submit" class="btn btn-save">Enviar Solicitação</button>
+                <button type="submit" id="btnEnviar" class="btn btn-save">Enviar Solicitação</button>
             </div>
         </form>
     </main>
 
-    <script>
-        // Máscara para o valor (R$)
+    <!-- FIREBASE INTEGRATION -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // --- MESMA CONFIGURAÇÃO DO PAINEL ADMIN ---
+        const firebaseConfig = {
+            apiKey: "SUA_API_KEY",
+            authDomain: "SEU_PROJETO.firebaseapp.com",
+            databaseURL: "https://reembolso-7691c-default-rtdb.firebaseio.com/",
+            projectId: "SEU_PROJETO",
+            storageBucket: "SEU_PROJETO.appspot.com",
+            messagingSenderId: "ID",
+            appId: "APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Máscara de valor
         const valorInput = document.getElementById('valorInput');
         valorInput.addEventListener('input', function(e) {
             let value = e.target.value.replace(/\D/g, "");
@@ -109,54 +129,63 @@
             e.target.value = value;
         });
 
-        function salvarSolicitacao(event, tipo, form) {
+        // Escutador do Formulário
+        const form = document.getElementById('formReembolso');
+        const btnEnviar = document.getElementById('btnEnviar');
+
+        form.addEventListener('submit', function(event) {
             event.preventDefault();
+            btnEnviar.disabled = true;
+            btnEnviar.innerText = "Enviando...";
+
             const arquivo = form.anexo.files[0];
 
             if (arquivo) {
-                // Limite de 2MB para PDFs e Imagens no LocalStorage
                 if (arquivo.size > 2 * 1024 * 1024) {
-                    alert("Arquivo muito grande! O limite é de 2MB para garantir o salvamento.");
+                    alert("Arquivo muito grande! O limite é de 2MB.");
+                    btnEnviar.disabled = false;
+                    btnEnviar.innerText = "Enviar Solicitação";
                     return;
                 }
 
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const dadosBase64 = e.target.result;
-                    processarGravacao(tipo, form, dadosBase64);
+                    enviarAoFirebase(form, dadosBase64);
                 };
                 reader.readAsDataURL(arquivo);
             } else {
-                processarGravacao(tipo, form, null);
+                enviarAoFirebase(form, null);
             }
-        }
+        });
 
-        function processarGravacao(tipo, form, anexoDados) {
-            try {
-                const solicitacao = {
-                    id: Date.now(),
-                    tipo: tipo,
-                    solicitante: form.nome.value.trim(),
-                    empresa: form.empresa.value,
-                    valor: form.valor.value,
-                    descricao: form.descricao.value.trim(),
-                    banco: form.banco.value.trim(),
-                    data: form.data.value ? new Date(form.data.value + 'T00:00:00').toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
-                    status: "Pendente",
-                    anexo: anexoDados // Salva os dados Base64 do PDF ou Imagem
-                };
+        function enviarAoFirebase(form, anexoDados) {
+            const novaSolicitacaoRef = push(ref(db, 'solicitacoes'));
+            
+            const solicitacao = {
+                tipo: "Reembolso",
+                solicitante: form.nome.value.trim(),
+                empresa: form.empresa.value,
+                valor: form.valor.value,
+                descricao: form.descricao.value.trim(),
+                banco: form.banco.value.trim(),
+                data: form.data.value ? new Date(form.data.value + 'T00:00:00').toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
+                status: "Pendente",
+                anexo: anexoDados,
+                timestamp: Date.now()
+            };
 
-                let lista = JSON.parse(localStorage.getItem("solicitacoes")) || [];
-                lista.push(solicitacao);
-                localStorage.setItem("solicitacoes", JSON.stringify(lista));
-
-                alert("Solicitação enviada com sucesso!");
-                window.location.href = "minhas-solicitacoes.html";
-
-            } catch (e) {
-                console.error(e);
-                alert("Erro: O arquivo PDF é muito pesado para o armazenamento local. Tente um arquivo menor.");
-            }
+            set(novaSolicitacaoRef, solicitacao)
+                .then(() => {
+                    alert("Solicitação enviada com sucesso para o banco de dados!");
+                    window.location.href = "minhas-solicitacoes.html";
+                })
+                .catch((error) => {
+                    console.error("Erro no Firebase:", error);
+                    alert("Erro ao salvar no banco de dados. Verifique sua conexão.");
+                    btnEnviar.disabled = false;
+                    btnEnviar.innerText = "Enviar Solicitação";
+                });
         }
     </script>
 </body>
