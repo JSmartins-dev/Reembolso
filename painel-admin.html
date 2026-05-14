@@ -167,18 +167,16 @@
     <div id="gridOutros" class="grid-solicitacoes"></div>
 </div>
 
-<!-- SDK FIREBASE -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, onValue, update, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // 1. COLE SUAS CONFIGURAÇÕES DO FIREBASE AQUI
     const firebaseConfig = {
         apiKey: "SUA_API_KEY",
-        authDomain: "SEU_PROJETO.firebaseapp.com",
+        authDomain: "reembolso-7691c.firebaseapp.com",
         databaseURL: "https://reembolso-7691c-default-rtdb.firebaseio.com/",
-        projectId: "SEU_PROJETO",
-        storageBucket: "SEU_PROJETO.appspot.com",
+        projectId: "reembolso-7691c",
+        storageBucket: "reembolso-7691c.appspot.com",
         messagingSenderId: "ID",
         appId: "APP_ID"
     };
@@ -186,19 +184,14 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Variáveis Globais
     let solicitacoesGlobais = [];
     let mostrarApenasPendentes = false;
     let primeiraCarga = true;
 
-    // --- FUNÇÕES CORE ---
-
-    // Ouvir dados do Firebase em Tempo Real
     onValue(ref(db, 'solicitacoes'), (snapshot) => {
         const data = snapshot.val();
         const lista = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
         
-        // Notificação se chegar algo novo (e não for a primeira vez que abre a página)
         if (!primeiraCarga && lista.length > solicitacoesGlobais.length) {
             exibirAlerta();
         }
@@ -208,7 +201,6 @@
         atualizarDashboard();
     });
 
-    // Ouvir Saldo Inicial
     onValue(ref(db, 'configuracoes/saldoInicial'), (snapshot) => {
         const saldo = snapshot.val() || 0;
         localStorage.setItem("saldoInicial", saldo);
@@ -226,7 +218,6 @@
             Outros: document.getElementById("gridOutros")
         };
 
-        // Limpar grids
         Object.values(grids).forEach(g => g.innerHTML = "");
 
         solicitacoesGlobais.forEach(s => {
@@ -251,7 +242,6 @@
         document.getElementById("saldoAtualDisplay").textContent = formatarMoeda(saldoFinal);
     }
 
-    // Expor funções para o HTML (devido ao type="module")
     window.mudarStatus = function(id, novoStatus) {
         if (!confirm(`Deseja definir como ${novoStatus}?`)) return;
         update(ref(db, `solicitacoes/${id}`), { status: novoStatus });
@@ -287,13 +277,16 @@
             </div>
         ` : `<span style="font-size:12px; color:#999; font-style:italic;">Processado</span>`;
 
+        // Lógica para descrição curta no card
+        const descPreview = s.descricao || s.item || s.motivo || "Sem descrição";
+
         return `
             <div class="block-card">
                 <span class="status ${statusClass}">${s.status}</span>
                 <h4>${s.solicitante || s.nome || 'Sem Nome'}</h4>
                 <p><span class="label">Data:</span> ${s.data || "-"}</p>
-                ${s.empresa ? `<p><span class="label">Local:</span> ${s.empresa}</p>` : ''}
-                ${s.item || s.descricao ? `<p><span class="label">Descrição:</span> ${s.item || s.descricao}</p>` : ''}
+                <p><span class="label">Tipo:</span> ${s.tipo || "Outro"}</p>
+                <p><span class="label">Descrição:</span> ${descPreview.substring(0, 50)}${descPreview.length > 50 ? '...' : ''}</p>
                 <div class="valor">${formatarMoeda(valorNum)}</div>
                 <div class="block-footer">
                     <button class="btn btn-primary" onclick="verDetalhes('${s.id}')">Ver Detalhes</button>
@@ -302,7 +295,6 @@
             </div>`;
     }
 
-    // Helpers
     function converterParaNumero(valor) {
         if (!valor) return 0;
         if (typeof valor === "number") return valor;
@@ -316,7 +308,7 @@
     function exibirAlerta() {
         document.getElementById("alerta-notificacao").classList.add("show");
         const som = document.getElementById("som-notificacao");
-        som.play().catch(() => console.log("Áudio bloqueado pelo navegador."));
+        som.play().catch(() => {});
     }
 
     window.fecharAlerta = function() {
@@ -331,18 +323,87 @@
     function abrirJanelaDetalhes(s) {
         const win = window.open("", "_blank");
         const valorFormatado = formatarMoeda(converterParaNumero(s.valor));
-        let anexoHtml = s.anexo && s.anexo.length > 100 ? 
-            (s.anexo.includes("pdf") ? `<iframe src="${s.anexo}" width="100%" height="500px"></iframe>` : `<img src="${s.anexo}" style="max-width:100%">`) 
-            : '<p>Sem anexo</p>';
+        
+        // Coleta qualquer campo de descrição disponível
+        const descricaoReal = s.descricao || s.item || s.motivo || "Nenhuma descrição informada.";
+        
+        let visualizacaoAnexo = "";
+        let botaoDownload = "";
 
-        win.document.write(`<html><head><title>Detalhes</title><style>body{font-family:sans-serif;padding:20px;background:#f4f4f4}.card{background:#fff;padding:20px;border-radius:10px;max-width:600px;margin:auto;box-shadow:0 2px 10px rgba(0,0,0,0.1)}</style></head>
-        <body><div class="card"><h2>Solicitação #${s.id}</h2><p><strong>Solicitante:</strong> ${s.solicitante || s.nome}</p><p><strong>Valor:</strong> ${valorFormatado}</p><p><strong>Motivo:</strong> ${s.motivo || s.item || '-'}</p><hr>${anexoHtml}</div></body></html>`);
+        if (s.anexo && s.anexo.length > 100) {
+            const isPdf = s.anexo.includes("application/pdf") || s.anexo.includes("pdf");
+            
+            if (isPdf) {
+                visualizacaoAnexo = `<iframe src="${s.anexo}" width="100%" height="500px" style="border:none; border-radius:8px;"></iframe>`;
+            } else {
+                visualizacaoAnexo = `<img src="${s.anexo}" style="max-width:100%; border-radius:8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">`;
+            }
+
+            botaoDownload = `<br><br><a href="${s.anexo}" download="anexo_${s.id}" style="display:inline-block; padding:12px 20px; background:#28a745; color:white; text-decoration:none; border-radius:5px; font-weight:bold;">⬇ Baixar Anexo</a>`;
+        } else {
+            visualizacaoAnexo = `<p style="color:#999; font-style:italic;">Nenhum anexo enviado.</p>`;
+        }
+
+        win.document.write(`
+            <html>
+            <head>
+                <title>Detalhes da Solicitação</title>
+                <style>
+                    body { font-family: 'Segoe UI', sans-serif; padding: 40px; background: #f0f2f5; color: #333; line-height: 1.6; }
+                    .card { background: #fff; padding: 30px; border-radius: 12px; max-width: 700px; margin: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+                    h2 { color: #004080; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+                    .info-group { margin-bottom: 15px; padding: 10px; background: #f9f9f9; border-radius: 6px; }
+                    .label { font-weight: bold; color: #666; display: block; font-size: 12px; text-transform: uppercase; }
+                    .value { font-size: 16px; color: #111; }
+                    .valor-destaque { font-size: 24px; font-weight: bold; color: #004080; }
+                    hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
+                </style>
+            </head>
+            <body>
+                <div class="card">
+                    <h2>Detalhes da Solicitação</h2>
+                    
+                    <div class="info-group">
+                        <span class="label">Tipo de Solicitação</span>
+                        <span class="value">${s.tipo}</span>
+                    </div>
+
+                    <div class="info-group">
+                        <span class="label">Solicitante</span>
+                        <span class="value">${s.solicitante || s.nome}</span>
+                    </div>
+
+                    <div class="info-group">
+                        <span class="label">Data</span>
+                        <span class="value">${s.data}</span>
+                    </div>
+
+                    <div class="info-group">
+                        <span class="label">Valor</span>
+                        <span class="value valor-destaque">${valorFormatado}</span>
+                    </div>
+
+                    <div class="info-group">
+                        <span class="label">Descrição / Motivo</span>
+                        <span class="value">${descricaoReal}</span>
+                    </div>
+
+                    <hr>
+                    <h3>Anexo / Comprovante</h3>
+                    ${visualizacaoAnexo}
+                    ${botaoDownload}
+                    
+                    <br><br>
+                    <button onclick="window.print()" style="padding:10px; cursor:pointer;">Imprimir Página</button>
+                </div>
+            </body>
+            </html>
+        `);
     }
 
 </script>
 
 <script>
-    // Proteção de Rota simples
     if (localStorage.getItem("usuarioLogado") !== "admin") {
         window.location.href = "login.html";
     }
